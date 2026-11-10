@@ -4,6 +4,7 @@
 แล้วคำนวณโดย bias.py (Thévenin) และ reference.py (KCL อิสระ)
 แสดงผลข้างกันบนเทมเพลต index.html
 
+หน่วยในฟอร์ม: VCC/VBE เป็น V, R1/R2/RC/RE เป็น kΩ (แปลงเป็น Ω ก่อนคำนวณ)
 เส้นทาง "/calculate" (POST) รับ JSON สำหรับเรียกผ่าน HTTP client ทั่วไป
 """
 
@@ -14,24 +15,27 @@ from reference import calculate_reference
 
 app = Flask(__name__)
 
-# ค่าเริ่มต้นของฟอร์ม (ตรงกับเอกสาร Lab 02 ของ ENG29 2121)
+# ค่าเริ่มต้นของฟอร์ม (ตรงกับเอกสาร Lab 02 ของ ENG29 2121) — ตัวต้านทานหน่วย kΩ
 DEFAULTS = {
-    "VCC": "12",
-    "R1": "100000",
-    "R2": "22000",
-    "RC": "2200",
-    "RE": "1000",
+    "VCC": "12.0",
+    "R1": "100",
+    "R2": "22",
+    "RC": "2.2",
+    "RE": "1.0",
     "beta": "100",
-    "VBE": "0.7",
+    "VBE": "0.70",
 }
 
 FIELDS = ["VCC", "R1", "R2", "RC", "RE", "beta", "VBE"]
+
+# ฟิลด์ที่ผู้ใช้กรอกเป็น kΩ แต่โมเดลคำนวณใช้ Ω
+RESISTOR_FIELDS = ["R1", "R2", "RC", "RE"]
 
 
 def validate(form):
     """ตรวจสอบค่าอินพุตจากฟอร์ม คืน (values_dict, error_message_or_None)
 
-    valuesdict มีคีย์เป็นชื่อฟิลด์ ค่าเป็น float แปลงแล้ว
+    ค่าที่คืนมายังเป็นหน่วยที่ผู้ใช้กรอก (kΩ สำหรับตัวต้านทาน)
     """
     values = {}
     for field in FIELDS:
@@ -46,6 +50,14 @@ def validate(form):
             return None, f"ค่า {field} ต้องมากกว่า 0"
         values[field] = val
     return values, None
+
+
+def to_ohms(values):
+    """แปลงค่าตัวต้านทานจาก kΩ เป็น Ω ก่อนนำไปคำนวณ"""
+    omega = dict(values)
+    for field in RESISTOR_FIELDS:
+        omega[field] = omega[field] * 1000.0
+    return omega
 
 
 def format_results(bias_result, ref_result):
@@ -81,15 +93,15 @@ def format_results(bias_result, ref_result):
     }
 
 
-def _compute(values):
-    """คำนวณจาก dict ค่า (float) คืนผลลัพธ์สำหรับส่งให้เทมเพลต"""
+def _compute(omega):
+    """คำนวณจากค่าในหน่วย SI (Ω) คืนผลลัพธ์สำหรับส่งให้เทมเพลต"""
     b = calculate_bias(
-        values["VCC"], values["R1"], values["R2"],
-        values["RC"], values["RE"], values["beta"], values["VBE"],
+        omega["VCC"], omega["R1"], omega["R2"],
+        omega["RC"], omega["RE"], omega["beta"], omega["VBE"],
     )
     r = calculate_reference(
-        values["VCC"], values["R1"], values["R2"],
-        values["RC"], values["RE"], values["beta"], values["VBE"],
+        omega["VCC"], omega["R1"], omega["R2"],
+        omega["RC"], omega["RE"], omega["beta"], omega["VBE"],
     )
     return format_results(b, r)
 
@@ -103,35 +115,35 @@ def index():
                 "index.html",
                 error=error,
                 values=request.form,
-                defaults=DEFAULTS,
                 results=None,
             )
 
-        results = _compute(values)
+        results = _compute(to_ohms(values))
         return render_template(
             "index.html",
             error=None,
             values=values,
-            defaults=DEFAULTS,
             results=results,
         )
 
     # GET: แสดงฟอร์มพร้อมค่าเริ่มต้นและผลคำนวณเริ่มต้น
-    values = {k: float(v) for k, v in DEFAULTS.items()}
-    results = _compute(values)
+    # ส่ง DEFAULTS (สตริง) ไปแสดงผล เพื่อให้ช่องกรอกแสดงตรงกับเอกสารเป๊ะ
+    results = _compute(to_ohms({k: float(v) for k, v in DEFAULTS.items()}))
 
     return render_template(
         "index.html",
         error=None,
         values=DEFAULTS,
-        defaults=DEFAULTS,
         results=results,
     )
 
 
 @app.route("/calculate", methods=["POST"])
 def calculate():
-    """เส้นทางสำหรับเรียกผ่าน JSON (รองรับ HTTP client ทั่วไป)"""
+    """เส้นทางสำหรับเรียกผ่าน JSON (รองรับ HTTP client ทั่วไป)
+
+    รับตัวต้านทานหน่วย kΩ เหมือนกับหน้าเว็บ
+    """
     data = request.get_json(silent=True) or {}
     values = {}
     for field in FIELDS:
@@ -143,7 +155,7 @@ def calculate():
             return jsonify({"error": f"ค่า {field} ต้องมากกว่า 0"}), 400
         values[field] = val
 
-    results = _compute(values)
+    results = _compute(to_ohms(values))
     return jsonify(results)
 
 
