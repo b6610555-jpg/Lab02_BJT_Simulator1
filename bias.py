@@ -16,8 +16,8 @@ def calculate_bias(VCC, R1, R2, RC, RE, beta, VBE):
     VBB = VCC * R2 / (R1 + R2)
     RB = R1 * R2 / (R1 + R2)
 
-    # Base current
-    IB = (VBB - VBE) / (RB + beta * RE)
+    # Base current — ใช้ (beta + 1) × RE ให้สมการเทียบเท่ากับ KCL ทุกประการ
+    IB = (VBB - VBE) / (RB + (beta + 1) * RE)
 
     # Region detection
     if VBB <= VBE:
