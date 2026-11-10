@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BJT CE DC Bias — ENG29 2121</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="container">
+    <h1>BJT Common-Emitter DC Bias</h1>
+    <p class="subtitle">รายวิชา ENG29 2121 &mdash; คำนวณจุดทำงานกระแสตรง เปรียบเทียบสองวิธี</p>
+
+    {% if error %}
+      <div class="error">{{ error }}</div>
+    {% endif %}
+
+    <form method="post" class="bias-form">
+      <div class="form-grid">
+        {% for field in ["VCC", "R1", "R2", "RC", "RE", "beta", "VBE"] %}
+          <div class="field">
+            <label>{{ field }}</label>
+            <input type="text" name="{{ field }}" value="{{ values.get(field, defaults.get(field, '')) }}" required>
+          </div>
+        {% endfor %}
+        <div class="field full">
+          <button type="submit">คำนวณ</button>
+        </div>
+      </div>
+    </form>
+
+    {% if results %}
+      <div class="results">
+        <h2>ผลลัพธ์จุดทำงาน</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>ตัวแปร</th>
+              <th>Thévenin</th>
+              <th>อิสระ (KCL)</th>
+              <th>ความต่าง</th>
+              <th>หน่วย</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for key, label in [
+              ("VBB", "VBB"),
+              ("RB", "RB"),
+              ("IB", "IB"),
+              ("IC", "IC"),
+              ("IE", "IE"),
+              ("VE", "VE"),
+              ("VC", "VC"),
+              ("VCE", "VCE")
+            ] %}
+              {% set b, r, d, unit = results[key] %}
+              <tr>
+                <td><strong>{{ label }}</strong></td>
+                <td>{{ "%.4f" % b }}</td>
+                <td>{{ "%.4f" % r }}</td>
+                <td>{{ "%.2e" % d }}{% if loop.index0 in (1,2) %} {{ "(% .2f %%)" % results.get("diff_ic_pct", 0) if key == "IC" else results.get("diff_vce_pct", 0) if key == "VCE" else "" }}{% endif %}</td>
+                <td>{{ unit }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        <div class="region">
+          <strong>โซนการทำงาน:</strong> {{ results.region }}
+        </div>
+
+        {% if results.warnings %}
+          <div class="warnings">
+            <strong>คำเตือน:</strong>
+            <ul>
+              {% for w in results.warnings %}
+                <li>{{ w }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+        {% endif %}
+
+        <div class="note">
+          ความต่างของ IC: {{ "%.2f" % results.diff_ic_pct }}% &nbsp;|&nbsp;
+          ความต่างของ VCE: {{ "%.2f" % results.diff_vce_pct }}%
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</body>
+</html>
