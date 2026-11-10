@@ -3,6 +3,10 @@
 Solves a 2x2 linear system in (VB, IB) by Cramer's rule — different algebra
 from bias.py (Thévenin reduction), same physics. Pure engineering logic,
 no Flask imports.
+
+สมการอ้างอิง (อิสระจาก bias.py):
+    KCL at base:   (VCC − VB)/R1 = VB/R2 + IB
+    Emitter loop: (VB − VBE)/RE = (β + 1) × IB
 """
 
 
@@ -10,7 +14,7 @@ def calculate_reference(VCC, R1, R2, RC, RE, beta, VBE):
     """คำนวณจุดทำงานกระแสตรงด้วย KCL สมการ 2×2 แก้ด้วยกฎคราเมอร์.
 
     คืนค่าดict พร้อมคีย์เดียวกับ bias.calculate_bias:
-    VBB, RB, IB, IC, IE, VE, VC, VCE, region, warnings
+    VBB, RB, IB, IC, IE, VE, VB, VC, VCE, region, warnings
     """
     warnings = []
 
@@ -44,7 +48,7 @@ def calculate_reference(VCC, R1, R2, RC, RE, beta, VBE):
     # Region detection (same thresholds as bias.py)
     if VBB <= VBE:
         region = "cutoff"
-        warnings.append("Cutoff: VBB <= VBE, IB ติดลบ โมเดลใช้ไม่ได้")
+        warnings.append("Cutoff: VBB ≤ VBE, โมเดล Forward-Active ใช้ไม่ได้")
     else:
         region = "active"
 
@@ -57,7 +61,7 @@ def calculate_reference(VCC, R1, R2, RC, RE, beta, VBE):
     if VCE < 0.2:
         region = "saturation"
         warnings.append(
-            "Saturation: VCE < 0.2 V, IC จริงต่ำกว่าเพราะจำกัดด้วย β"
+            "Saturation: VCE < 0.2 V, ค่า IC จริงต่ำกว่าที่โมเดลคำนวณเพราะจำกัดด้วย β"
         )
 
     if VBE < 0.5 or VBE > 0.8:
@@ -70,6 +74,7 @@ def calculate_reference(VCC, R1, R2, RC, RE, beta, VBE):
         "IC": IC,
         "IE": IE,
         "VE": VE,
+        "VB": VB,
         "VC": VC,
         "VCE": VCE,
         "region": region,
