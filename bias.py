@@ -2,33 +2,36 @@
 
 Pure engineering logic — no Flask imports — so it can be tested standalone.
 
-สมการอ้างอิง (ตามเอกสาร Lab 02 ของ ENG29 2121):
-    VTH  = VCC × R2 / (R1 + R2)
-    RTH  = R1 × R2 / (R1 + R2)
-    IB   = (VTH − VBE) / (RTH + (β + 1) × RE)
-    IC   = β × IB
-    IE   = (β + 1) × IB
-    VE   = IE × RE
-    VB   = VE + VBE        (= VBE + IB × (RTH + (β+1)×RE) − I_B×RTH, เท่ากับ VBE + VE)
-    VC   = VCC − IC × RC
-    VCE  = VC − VE
+แบบจำลองหลัก (ตรงกับภาพอ้างอิงของ Lab 02):
+    ดิวิเดอร์ R1–R2 ถือเป็นอุดมคติ ไม่คิดผลของกระแสเบสที่ไหลกลับมาโหลดดิวิเดอร์
+
+        VBB = VCC × R2 / (R1 + R2)
+        IB  = (VBB − VBE) / (β × RE)
+        IC  = β × IB
+        IE  = (β + 1) × IB
+        VE  = IE × RE
+        VB  = VE + VBE
+        VC  = VCC − IC × RC
+        VCE = VC − VE
+
+สำหรับการตรวจสอบอิสระที่คิดผลของการโหลดดิวิเดอร์ (RTH) ดู reference.py
 """
 
 
 def calculate_bias(VCC, R1, R2, RC, RE, beta, VBE):
-    """คำนวณจุดทำงานกระแสตรงของขยาย Common-Emitter แบบ Voltage-Divider Bias.
+    """คำนวณจุดทำงานกระแสตรงแบบดิวิเดอร์อุดมคติ.
 
     คืนค่าดict พร้อมคีย์: VBB, RB, IB, IC, IE, VE, VB, VC, VCE, region, warnings
     หน่วยดิบ: V, Ω, A (เทมเพลตจะแปลงหน่วยแสดงผลเอง)
     """
     warnings = []
 
-    # Thévenin equivalent at the base
+    # Thévenin voltage at the base (open-circuit divider voltage)
     VBB = VCC * R2 / (R1 + R2)
     RB = R1 * R2 / (R1 + R2)
 
-    # Base current — ใช้ (beta + 1) × RE ให้สมการเทียบเท่ากับ KCL ทุกประการ
-    IB = (VBB - VBE) / (RB + (beta + 1) * RE)
+    # Base current — แบบอุดมคติ: ไม่คิด RTH (กระแสเบสไม่โหลดดิวิเดอร์)
+    IB = (VBB - VBE) / (beta * RE)
 
     # Region detection
     if VBB <= VBE:

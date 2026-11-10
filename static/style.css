@@ -216,36 +216,39 @@ button:hover { background: var(--teal-dk); }
 .results-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: .84rem;
+  font-size: .86rem;
+  border: 1px solid var(--line);
 }
 
-.results-table tr:nth-child(odd)  { background: #f7fafc; }
-.results-table tr:nth-child(even) { background: #eef4f9; }
+.results-table tr + tr td { border-top: 1px solid #e4ecf3; }
 
-.results-table td { padding: 6px 9px; vertical-align: middle; }
+.results-table td { padding: 7px 10px; vertical-align: middle; }
 
 .results-table .sym {
-  width: 42%;
+  width: 46%;
+  max-width: 112px;
+  background: #eef4f9;
   color: var(--ink);
   font-family: Georgia, "Times New Roman", serif;
   font-style: italic;
-  font-size: .95rem;
+  font-size: 1rem;
 }
 
-.results-table .sym sub { font-size: .68rem; }
+.results-table .sym sub { font-size: .7rem; }
 
 .results-table .val {
   text-align: right;
   font-weight: 700;
   color: var(--navy);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .results-table .unit {
-  width: 34px;
-  text-align: right;
   color: var(--muted);
-  font-size: .78rem;
+  font-weight: 400;
+  font-size: .8rem;
+  margin-left: 2px;
 }
 
 .status {
@@ -288,17 +291,38 @@ button:hover { background: var(--teal-dk); }
   color: var(--warn-ink);
 }
 
-.crosscheck {
-  margin-top: 11px;
-  padding-top: 9px;
-  border-top: 1px dashed var(--line);
-  font-size: .74rem;
+.model-note {
+  margin: 10px 0 0;
+  padding: 7px 9px;
+  background: #f2f6fa;
+  border-left: 3px solid #b9cfe0;
+  border-radius: 0 5px 5px 0;
+  font-size: .72rem;
   color: var(--muted);
   line-height: 1.5;
 }
 
-.crosscheck strong { color: var(--ink); }
-.crosscheck .delta { display: block; }
+.model-note strong { color: var(--ink); }
+
+.crosscheck {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 8px 0 0;
+  font-size: .72rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.crosscheck svg {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 12px;
+  margin-top: 3px;
+  color: var(--ok-ink);
+}
+
+.crosscheck sub { font-size: .64rem; }
 
 /* ---------------- Goal bar ---------------- */
 .goal-bar {

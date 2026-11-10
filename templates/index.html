@@ -89,62 +89,60 @@
         </h2>
 
         <div class="circuit-box">
-          <svg viewBox="0 0 330 380" class="circuit" xmlns="http://www.w3.org/2000/svg"
+          <svg viewBox="0 0 300 340" class="circuit" xmlns="http://www.w3.org/2000/svg"
                role="img" aria-labelledby="circuit-title">
             <title id="circuit-title">BJT Common-Emitter Voltage Divider Bias circuit</title>
 
             <!-- VCC rail -->
-            <line x1="35" y1="45" x2="272" y2="45" stroke="#333" stroke-width="2"/>
-            <circle cx="150" cy="45" r="4" fill="#333"/>
-            <text x="150" y="27" text-anchor="middle" font-size="12" fill="#222">V<tspan font-size="8" dy="3">CC</tspan><tspan dy="-3"> = 12 V</tspan></text>
+            <line x1="28" y1="40" x2="258" y2="40" stroke="#333" stroke-width="2"/>
+            <circle cx="170" cy="40" r="3.6" fill="#333"/>
+            <text x="170" y="24" text-anchor="middle" font-size="11.5" fill="#222">V<tspan font-size="8" dy="3">CC</tspan><tspan dy="-3"> = 12 V</tspan></text>
 
-            <!-- R1 -->
-            <polyline points="85,45 85,55 79,63 91,71 79,79 91,87 85,95 85,190"
-                      fill="none" stroke="#333" stroke-width="2" stroke-linejoin="round"/>
-            <text x="68" y="74" text-anchor="end" font-size="11" fill="#222">R<tspan font-size="8" dy="2">1</tspan></text>
-            <text x="68" y="89" text-anchor="end" font-size="10" fill="#555">{{ values.get('R1', 0) }} kΩ</text>
+            <!-- R1 : VCC rail down to base node -->
+            <polyline points="70,40 70,52 64,60 76,68 64,76 76,84 70,92 70,175"
+                      fill="none" stroke="#333" stroke-width="1.9" stroke-linejoin="round"/>
+            <text x="54" y="66" text-anchor="end" font-size="11" fill="#222">R<tspan font-size="8" dy="2">1</tspan></text>
+            <text x="54" y="81" text-anchor="end" font-size="10" fill="#5a6b7b">{{ values.get('R1', 0) }} kΩ</text>
 
             <!-- base node -->
-            <circle cx="85" cy="190" r="3.2" fill="#333"/>
+            <circle cx="70" cy="175" r="3" fill="#333"/>
 
-            <!-- R2 -->
-            <polyline points="85,190 85,215 79,223 91,231 79,239 91,247 85,255 85,320"
-                      fill="none" stroke="#333" stroke-width="2" stroke-linejoin="round"/>
-            <text x="68" y="234" text-anchor="end" font-size="11" fill="#222">R<tspan font-size="8" dy="2">2</tspan></text>
-            <text x="68" y="249" text-anchor="end" font-size="10" fill="#555">{{ values.get('R2', 0) }} kΩ</text>
-
-            <!-- ground (R2) -->
-            <path d="M73 320 H97 M79 326 H91 M84 332 H86" stroke="#333" stroke-width="1.8" fill="none"/>
+            <!-- R2 : base node down to ground -->
+            <polyline points="70,175 70,185 64,193 76,201 64,209 76,217 70,225 70,306"
+                      fill="none" stroke="#333" stroke-width="1.9" stroke-linejoin="round"/>
+            <text x="54" y="199" text-anchor="end" font-size="11" fill="#222">R<tspan font-size="8" dy="2">2</tspan></text>
+            <text x="54" y="214" text-anchor="end" font-size="10" fill="#5a6b7b">{{ values.get('R2', 0) }} kΩ</text>
+            <path d="M58 306 H82 M64 312 H76 M68 318 H70" stroke="#333" stroke-width="1.7" fill="none"/>
 
             <!-- base lead -->
-            <line x1="85" y1="190" x2="168" y2="190" stroke="#333" stroke-width="2"/>
+            <line x1="70" y1="175" x2="140" y2="175" stroke="#333" stroke-width="1.9"/>
 
-            <!-- transistor -->
-            <circle cx="178" cy="190" r="26" fill="none" stroke="#333" stroke-width="1.8"/>
-            <line x1="168" y1="162" x2="168" y2="218" stroke="#333" stroke-width="3"/>
-            <line x1="168" y1="168" x2="205" y2="138" stroke="#333" stroke-width="2"/>
-            <line x1="168" y1="212" x2="205" y2="244" stroke="#333" stroke-width="2"/>
-            <path d="M192 232 L205 244 L190 240 Z" fill="#333"/>
-            <text x="188" y="177" text-anchor="middle" font-size="11" fill="#222">Q<tspan font-size="8" dy="2">1</tspan></text>
-            <text x="188" y="195" text-anchor="middle" font-size="9" fill="#555">NPN</text>
-            <text x="182" y="268" font-size="10" fill="#555">(β = {{ values.get('beta', 0) }})</text>
+            <!-- transistor NPN -->
+            <circle cx="152" cy="175" r="24" fill="none" stroke="#333" stroke-width="1.7"/>
+            <line x1="140" y1="152" x2="140" y2="198" stroke="#333" stroke-width="2.8"/>
+            <line x1="140" y1="160" x2="172" y2="132" stroke="#333" stroke-width="1.9"/>
+            <line x1="140" y1="190" x2="178" y2="224" stroke="#333" stroke-width="1.9"/>
+            <polygon points="163,210 153.5,205.5 157.5,201.1" fill="#333"/>
 
-            <!-- RC -->
-            <polyline points="205,45 205,55 199,63 211,71 199,79 211,87 205,95 205,138"
-                      fill="none" stroke="#333" stroke-width="2" stroke-linejoin="round"/>
-            <line x1="205" y1="138" x2="205" y2="138" stroke="#333" stroke-width="2"/>
-            <text x="222" y="72" font-size="11" fill="#222">R<tspan font-size="8" dy="2">C</tspan></text>
-            <text x="222" y="87" font-size="10" fill="#555">{{ values.get('RC', 0) }} kΩ</text>
+            <!-- transistor labels -->
+            <text x="182" y="160" font-size="11" fill="#222">Q<tspan font-size="8" dy="2">1</tspan></text>
+            <text x="182" y="174" font-size="9.5" fill="#222">NPN</text>
+            <text x="182" y="187" font-size="9.5" fill="#5a6b7b">(β = {{ values.get('beta', 0) }})</text>
+
+            <!-- RC : VCC rail down to collector -->
+            <polyline points="172,40 172,52 166,60 178,68 166,76 178,84 172,92 172,132"
+                      fill="none" stroke="#333" stroke-width="1.9" stroke-linejoin="round"/>
+            <text x="189" y="66" font-size="11" fill="#222">R<tspan font-size="8" dy="2">C</tspan></text>
+            <text x="189" y="81" font-size="10" fill="#5a6b7b">{{ values.get('RC', 0) }} kΩ</text>
 
             <!-- emitter to RE -->
-            <line x1="205" y1="244" x2="240" y2="244" stroke="#333" stroke-width="2"/>
-            <polyline points="240,244 240,285 234,293 246,301 234,309 246,317 240,325 240,352"
-                      fill="none" stroke="#333" stroke-width="2" stroke-linejoin="round"/>
-            <text x="258" y="300" font-size="11" fill="#222">R<tspan font-size="8" dy="2">E</tspan></text>
-            <text x="258" y="315" font-size="10" fill="#555">{{ values.get('RE', 0) }} kΩ</text>
-
-            <!-- ground (RE) -->
-            <path d="M228 352 H252 M234 358 H246 M239 364 H241" stroke="#333" stroke-width="1.8" fill="none"/>
+            <line x1="178" y1="224" x2="205" y2="224" stroke="#333" stroke-width="1.9"/>
+            <line x1="205" y1="224" x2="205" y2="235" stroke="#333" stroke-width="1.9"/>
+            <polyline points="205,235 205,245 199,253 211,261 199,269 211,277 205,285 205,306"
+                      fill="none" stroke="#333" stroke-width="1.9" stroke-linejoin="round"/>
+            <text x="221" y="252" font-size="11" fill="#222">R<tspan font-size="8" dy="2">E</tspan></text>
+            <text x="221" y="267" font-size="10" fill="#5a6b7b">{{ values.get('RE', 0) }} kΩ</text>
+            <path d="M193 306 H217 M199 312 H211 M203 318 H205" stroke="#333" stroke-width="1.7" fill="none"/>
           </svg>
         </div>
         <p class="circuit-caption">Voltage-Divider Bias — ภาพประกอบวงจร (ไม่ใช่ผลจำลอง)</p>
@@ -174,8 +172,7 @@
                 {% set b, r, d, u = results[key] %}
                 <tr>
                   <td class="sym">{{ sym|safe }}</td>
-                  <td class="val">{{ "%.2f" % b }}</td>
-                  <td class="unit">{{ unit }}</td>
+                  <td class="val">{{ "%.2f" % b }} <span class="unit">{{ unit }}</span></td>
                 </tr>
               {% endfor %}
             </tbody>
@@ -213,12 +210,20 @@
             </ul>
           {% endif %}
 
-          <div class="crosscheck">
-            <strong>ตรวจสอบอิสระ (KCL):</strong>
-            I<sub>C</sub> = {{ "%.3f" % results["IC"][1] }} mA ·
-            V<sub>CE</sub> = {{ "%.3f" % results["VCE"][1] }} V
-            <span class="delta">(ต่างจาก Thévenin {{ "%.2f" % results.diff_ic_pct }}% / {{ "%.2f" % results.diff_vce_pct }}%)</span>
-          </div>
+          <p class="model-note">
+            <strong>แบบจำลอง:</strong> {{ results.model_note }}
+          </p>
+
+          <p class="crosscheck">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12.5l4.5 4.5L19 7"></path>
+            </svg>
+            <span>
+              ตรวจสอบอิสระ (KCL แบบเต็ม คิดผลโหลดดิวิเดอร์):
+              I<sub>C</sub> = {{ "%.3f" % results.ref_ic_ma }} mA, V<sub>CE</sub> = {{ "%.3f" % results.ref_vce_v }} V
+              — ต่างจากแบบหลัก {{ "%.2f" % results.diff_ic_pct }}%
+            </span>
+          </p>
         {% else %}
           <p class="muted">กรอกค่าแล้วกด <strong>Calculate DC Bias</strong> เพื่อดูผลลัพธ์</p>
         {% endif %}

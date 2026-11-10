@@ -3,26 +3,39 @@ from bias import calculate_bias
 from reference import calculate_reference
 
 
-def test_matches_bias_golden():
-    b = calculate_bias(12, 47000, 10000, 2200, 470, 150, 0.7)
-    r = calculate_reference(12, 47000, 10000, 2200, 470, 150, 0.7)
-    assert r["IC"] == pytest.approx(b["IC"], rel=1e-9)
-    assert r["VCE"] == pytest.approx(b["VCE"], rel=1e-9)
-    assert r["VB"] == pytest.approx(b["VB"], rel=1e-9)
-    assert r["region"] == b["region"]
+def test_exact_golden_values():
+    """แบบเต็ม: KCL ที่โหนดเบส + ลูปอิเมตเตอร์ แก้ 2×2 ด้วยกฎคราเมอร์ (คิดผลการโหลดดิวิเดอร์)
 
-
-def test_golden_defaults_values():
-    r = calculate_reference(12, 47000, 10000, 2200, 470, 150, 0.7)
+    ค่าเริ่มต้น Lab 02: VCC=12, R1=100k, R2=22k, RC=2.2k, RE=1k, beta=100, VBE=0.7
+    """
+    r = calculate_reference(12, 100000, 22000, 2200, 1000, 100, 0.7)
     assert r["region"] == "active"
-    assert r["VBB"] == pytest.approx(2.1052631578947367, rel=1e-9)
-    assert r["RB"] == pytest.approx(8245.61403508772, rel=1e-9)
-    assert r["IB"] == pytest.approx(1.77397243587898e-05, rel=1e-9)
-    assert r["IC"] == pytest.approx(0.0026609586538184696, rel=1e-9)
-    assert r["VE"] == pytest.approx(1.2589882377433121, rel=1e-9)
-    assert r["VB"] == pytest.approx(1.9589882377433122, rel=1e-9)
-    assert r["VC"] == pytest.approx(6.145890961599367, rel=1e-9)
-    assert r["VCE"] == pytest.approx(4.886902723856055, rel=1e-9)
+    assert r["VBB"] == pytest.approx(2.1639344262295084, rel=1e-9)
+    assert r["RB"] == pytest.approx(18032.786885245903, rel=1e-9)
+    assert r["IB"] == pytest.approx(1.2298581462608456e-05, rel=1e-9)
+    assert r["IC"] == pytest.approx(0.0012298581462608456, rel=1e-9)
+    assert r["IE"] == pytest.approx(0.001242156727723454, rel=1e-9)
+    assert r["VE"] == pytest.approx(1.2421567277234542, rel=1e-9)
+    assert r["VB"] == pytest.approx(1.9421567277234542, rel=1e-9)
+    assert r["VC"] == pytest.approx(9.29431207822614, rel=1e-9)
+    assert r["VCE"] == pytest.approx(8.052155350502685, rel=1e-9)
+
+
+def test_matches_classic_thevenin_with_rth():
+    """KCL 2×2 ต้องตรงกับสูตร Thévenin ที่รวม RTH — ยืนยันว่าสองทางคำนวณถูกต้อง"""
+    r = calculate_reference(12, 100000, 22000, 2200, 1000, 100, 0.7)
+    VBB = 12 * 22000 / (100000 + 22000)
+    RB = 100000 * 22000 / (100000 + 22000)
+    assert r["IB"] == pytest.approx((VBB - 0.7) / (RB + 101 * 1000), rel=1e-12)
+
+
+def test_exact_is_lower_than_approximation():
+    """แบบเต็ม (คิดการโหลดดิวิเดอร์) ต้องได้กระแสเบสน้อยกว่าแบบอุดมคติ"""
+    approx = calculate_bias(12, 100000, 22000, 2200, 1000, 100, 0.7)
+    exact = calculate_reference(12, 100000, 22000, 2200, 1000, 100, 0.7)
+    assert exact["IB"] < approx["IB"]
+    assert exact["IC"] < approx["IC"]
+    assert exact["VCE"] > approx["VCE"]
 
 
 def test_second_bias_point_values():

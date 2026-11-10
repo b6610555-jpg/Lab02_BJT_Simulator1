@@ -37,15 +37,23 @@ def test_valid_post_shows_results(client):
 
 
 def test_kohm_units_converted_to_ohm(client):
-    """R1=100 kΩ ต้องให้ผลเหมือนคำนวณด้วย 100000 Ω"""
+    """R1=100 kΩ ต้องให้ผลเหมือนคำนวณด้วย 100000 Ω (แบบดิวิเดอร์อุดมคติ)"""
     response = client.post("/", data={
         "VCC": "12", "R1": "100", "R2": "22",
         "RC": "2.2", "RE": "1.0", "beta": "100", "VBE": "0.7"
     })
     assert response.status_code == 200
-    # IC = 1.230 mA สำหรับชุดค่าเริ่มต้นของ Lab
-    assert b"1.23" in response.data
-    assert b"8.05" in response.data  # VCE
+    # IC = 1.46 mA, VCE = 7.30 V สำหรับชุดค่าเริ่มต้นของ Lab
+    assert b"1.46" in response.data
+    assert b"7.30" in response.data
+
+
+def test_model_assumption_is_shown(client):
+    """หน้าเว็บต้องระบุสมมติฐานของแบบจำลองและค่าตรวจสอบอิสระ"""
+    response = client.get("/")
+    assert response.status_code == 200
+    assert "อุดมคติ".encode("utf-8") in response.data
+    assert "KCL".encode("utf-8") in response.data
 
 
 def test_invalid_post_shows_error(client):

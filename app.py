@@ -61,7 +61,11 @@ def to_ohms(values):
 
 
 def format_results(bias_result, ref_result):
-    """แปลงผลคำนวณเป็น dict สำหรับส่งให้เทมเพลต แยกคอลัมน์ Thévenin / อิสระ / ความต่าง"""
+    """แปลงผลคำนวณเป็น dict สำหรับส่งให้เทมเพลต
+
+    bias_result = แบบดิวิเดอร์อุดมคติ (ค่าที่แสดงหลัก)
+    ref_result  = แบบเต็มที่คิดผลการโหลดดิวิเดอร์ (ใช้ตรวจสอบอิสระ)
+    """
     b = bias_result
     r = ref_result
 
@@ -90,6 +94,10 @@ def format_results(bias_result, ref_result):
         "warnings": list(set(b["warnings"] + r["warnings"])),
         "diff_ic_pct": diff_ic_pct,
         "diff_vce_pct": diff_vce_pct,
+        # โมเดลหลักที่ใช้แสดงผล และค่าจากการตรวจสอบอิสระ
+        "model_note": "ดิวิเดอร์ R₁–R₂ ถือเป็นอุดมคติ (ไม่คิดผลกระแสเบสที่โหลดดิวิเดอร์)",
+        "ref_ic_ma": ma(r["IC"]),
+        "ref_vce_v": r["VCE"],
     }
 
 
