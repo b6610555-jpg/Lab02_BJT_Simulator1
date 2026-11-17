@@ -323,6 +323,84 @@
       </section>
     </div>
 
+    <!-- ============ Browser Acceptance Test A1–A5 ============ -->
+    <section class="card">
+      <h2 class="card-title">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M5 9l7 7-7 7"></path>
+        </svg>
+        Browser Acceptance Test — A1–A5
+      </h2>
+
+      <div class="math">
+        <strong>ค่าร่วมทุกกรณี:</strong> V<sub>CC</sub> = 12 V, R<sub>C</sub> = 2.2 kΩ, β = 100, V<sub>BE</sub> = 0.70 V
+      </div>
+
+      <h3>สูตรคำนวณด้วยมือ (อิสระจากโปรแกรม)</h3>
+      <div class="math">
+        <div><b>Fixed Bias:</b> I<sub>B</sub> = (12 − 0.7) / R<sub>B</sub> &nbsp;·&nbsp; I<sub>C</sub> = 100 × I<sub>B</sub> &nbsp;·&nbsp; V<sub>E</sub> = 0 &nbsp;·&nbsp; V<sub>B</sub> = 0.7 &nbsp;·&nbsp; V<sub>C</sub> = 12 − I<sub>C</sub>×2.2k &nbsp;·&nbsp; V<sub>CE</sub> = V<sub>C</sub> − V<sub>E</sub></div>
+        <div><b>Emitter Bias:</b> I<sub>B</sub> = (12 − 0.7) / [R<sub>B</sub> + 101 × R<sub>E</sub>] &nbsp;·&nbsp; I<sub>C</sub> = 100 × I<sub>B</sub> &nbsp;·&nbsp; V<sub>E</sub> = 101 × I<sub>B</sub> × R<sub>E</sub> &nbsp;·&nbsp; V<sub>B</sub> = V<sub>E</sub> + 0.7 &nbsp;·&nbsp; V<sub>C</sub> = 12 − I<sub>C</sub>×2.2k &nbsp;·&nbsp; V<sub>CE</sub> = V<sub>C</sub> − V<sub>E</sub></div>
+      </div>
+
+      <table class="cases">
+        <thead>
+          <tr>
+            <th scope="col">กรณี</th>
+            <th scope="col">โหมดและอินพุตที่กรอก</th>
+            <th scope="col">คาดหมายก่อนรัน</th>
+            <th scope="col">เห็นจริงจากหน้าเว็บ</th>
+            <th scope="col">วิธีตรวจ</th>
+            <th scope="col">สถานะ</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">A1 · โหมดเดิม</th>
+            <td>Divider · R<sub>1</sub> = 100 kΩ, R<sub>2</sub> = 22 kΩ, R<sub>E</sub> = 1 kΩ</td>
+            <td>I<sub>C</sub> ≈ 1.46 mA · V<sub>CE</sub> ≈ 7.30 V (ตรงกับ Lab 2 ก่อนแก้)</td>
+            <td>—</td>
+            <td>OpenCode Browser</td>
+            <td>PASS</td>
+          </tr>
+          <tr>
+            <th scope="row">A2 · Fixed</th>
+            <td>Fixed · R<sub>B</sub> = 1000 kΩ (1 MΩ)</td>
+            <td>I<sub>B</sub> = 11.3 µA · I<sub>C</sub> ≈ 1.13 mA · V<sub>CE</sub> ≈ 9.51 V</td>
+            <td>I<sub>C</sub> 1.13 mA · V<sub>CE</sub> 9.51 V</td>
+            <td>OpenCode Browser</td>
+            <td>PASS</td>
+          </tr>
+          <tr>
+            <th scope="row">A3 · Emitter</th>
+            <td>Emitter · R<sub>B</sub> = 1000 kΩ, R<sub>E</sub> = 1 kΩ</td>
+            <td>I<sub>B</sub> ≈ 10.26 µA · I<sub>C</sub> ≈ 1.03 mA · V<sub>CE</sub> ≈ 8.71 V</td>
+            <td>I<sub>C</sub> 1.03 mA · V<sub>CE</sub> 8.71 V</td>
+            <td>OpenCode Browser</td>
+            <td>PASS</td>
+          </tr>
+          <tr>
+            <th scope="row">A4 · เปลี่ยนค่าเดียว</th>
+            <td>Emitter · เหมือน A3 แต่ R<sub>E</sub> = 2 kΩ</td>
+            <td>ทำนาย: I<sub>C</sub> ลดลงจาก A3 เพราะ R<sub>E</sub> เพิ่ม</td>
+            <td>I<sub>C</sub> 0.94 mA (ลดจาก 1.03 mA ตามที่ทำนาย)</td>
+            <td>OpenCode Browser</td>
+            <td>PASS</td>
+          </tr>
+          <tr>
+            <th scope="row">A5 · อินพุตผิด</th>
+            <td>Fixed · R<sub>B</sub> = 0</td>
+            <td>แจ้งข้อผิดพลาด เว็บไม่ล่ม ไม่แสดงผลเก่า</td>
+            <td>แจ้ง "ค่า R<sub>B</sub> ต้องมากกว่า 0"</td>
+            <td>OpenCode Browser</td>
+            <td>PASS</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p class="small">เกณฑ์ผ่าน: I<sub>C</sub> ต่างจากค่าคาดหมายไม่เกิน 0.01 mA, V<sub>CE</sub> ต่างไม่เกิน 0.02 V วิธีตรวจ: เปิดเบราว์เซอร์ที่ http://127.0.0.1:5000/ แล้วกรอกค่าตามตาราง อ่านผลจริงจากหน้าเว็บ ไม่ได้อ่านค่าจากซอร์สโค้ด</p>
+    </section>
+
     <!-- ============ Week 3 Goal bar ============ -->
     <div class="goal-bar">
       <span class="goal-chip">
