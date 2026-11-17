@@ -55,10 +55,34 @@ MODE_FIELDS = {
 RESISTOR_FIELDS = ["R1", "R2", "RC", "RE", "RB"]
 
 
+def parse_resistor(raw):
+    """แปลงค่าตัวต้านทานที่อาจมีตัวต่อ k/K หรือ M/M คืนค่าเป็น kΩ
+
+    รองรับเช่น "1k" → 1 kΩ, "2.2K" → 2.2 kΩ, "1M" → 1000 kΩ, "100" → 100 kΩ
+    """
+    raw = raw.strip()
+    if raw == "":
+        return None, "กรุณากรอกค่า"
+    multiplier = 1.0
+    if raw[-1] in ("k", "K"):
+        raw = raw[:-1]
+    elif raw[-1] in ("M",):
+        multiplier = 1000.0
+        raw = raw[:-1]
+    try:
+        val = float(raw)
+    except ValueError:
+        return None, "ต้องเป็นตัวเลข"
+    if val <= 0:
+        return None, "ต้องมากกว่า 0"
+    return val * multiplier, None
+
+
 def validate(form, mode):
     """ตรวจสอบค่าอินพุตจากฟอร์ม คืน (values_dict, error_message_or_None)
 
     ตรวจเฉพาะฟิลด์ที่โหมดนั้นต้องการเท่านั้น
+    ตัวต้านทานรับค่าที่มีตัวต่อ k/K หรือ M/M ได้ (เช่น 1k, 1M)
     ค่าที่คืนมายังเป็นหน่วยที่ผู้ใช้กรอก (kΩ สำหรับตัวต้านทาน)
     """
     if mode not in MODES:
@@ -67,15 +91,21 @@ def validate(form, mode):
     values = {}
     for field in MODE_FIELDS[mode]:
         raw = form.get(field, "").strip()
-        if raw == "":
-            return None, f"กรุณากรอกค่า {field}"
-        try:
-            val = float(raw)
-        except ValueError:
-            return None, f"ค่า {field} ต้องเป็นตัวเลข"
-        if val <= 0:
-            return None, f"ค่า {field} ต้องมากกว่า 0"
-        values[field] = val
+        if field in RESISTOR_FIELDS:
+            val, err = parse_resistor(raw)
+            if err:
+                return None, f"ค่า {field} {err}"
+            values[field] = val
+        else:
+            if raw == "":
+                return None, f"กรุณากรอกค่า {field}"
+            try:
+                val = float(raw)
+            except ValueError:
+                return None, f"ค่า {field} ต้องเป็นตัวเลข"
+            if val <= 0:
+                return None, f"ค่า {field} ต้องมากกว่า 0"
+            values[field] = val
     return values, None
 
 
