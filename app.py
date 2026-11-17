@@ -204,6 +204,7 @@ def format_single_results(result, mode):
         "VC": (b["VC"], None, None, "V"),
         "VCE": (b["VCE"], None, None, "V"),
         "region": b["region"],
+        "critical": b.get("critical", False),
         "warnings": list(b["warnings"]),
         "diff_ic_pct": 0.0,
         "diff_vce_pct": 0.0,

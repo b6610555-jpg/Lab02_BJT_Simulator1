@@ -265,76 +265,88 @@
         </h2>
 
         {% if results %}
-          <table class="results-table">
-            <tbody>
-              {% for key, sym, unit in [
-                ("VB",  "V<sub>B</sub>",  "V"),
-                ("VE",  "V<sub>E</sub>",  "V"),
-                ("VC",  "V<sub>C</sub>",  "V"),
-                ("VCE", "V<sub>CE</sub>", "V"),
-                ("IB",  "I<sub>B</sub>",  "µA"),
-                ("IC",  "I<sub>C</sub>",  "mA"),
-                ("IE",  "I<sub>E</sub>",  "mA")
-              ] %}
-                {% set b, r, d, u = results[key] %}
-                <tr>
-                  <td class="sym">{{ sym|safe }}</td>
-                  <td class="val">{{ "%.2f" % b }} <span class="unit">{{ unit }}</span></td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-
-          {% if results.region == "active" %}
-            <div class="status ok">
-              <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="9"></circle>
-                <path d="M8 12.5l2.6 2.6L16 9.5"></path>
-              </svg>
-              <div>
-                <strong>Active region approximation OK</strong>
-                <span>V<sub>CE</sub> = {{ "%.2f" % results["VCE"][0] }} V &gt; 0.2 V (transistor in active region)</span>
-              </div>
-            </div>
-          {% else %}
+          {% if results.region == "cutoff" %}
             <div class="status warn">
               <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 3L1.5 21h21L12 3z"></path>
                 <path d="M12 9v5M12 17.5v.5"></path>
               </svg>
               <div>
-                <strong>{{ results.region }} region — ค่าที่แสดงไม่น่าเชื่อถือ</strong>
-                <span>โมเดล Forward-Active ใช้ไม่ได้เมื่ออยู่นอกโซน Active</span>
+                <strong>โหมด Cutoff — ไม่มีกระแสไหลเข้าขั้วเบส</strong>
+                <span>โมเดล Forward-Active ใช้ไม่ได้ ผลคำนวณ IC/VCE ไม่สามารถแสดงได้</span>
               </div>
             </div>
-          {% endif %}
+          {% else %}
+            <table class="results-table">
+              <tbody>
+                {% for key, sym, unit in [
+                  ("VB",  "V<sub>B</sub>",  "V"),
+                  ("VE",  "V<sub>E</sub>",  "V"),
+                  ("VC",  "V<sub>C</sub>",  "V"),
+                  ("VCE", "V<sub>CE</sub>", "V"),
+                  ("IB",  "I<sub>B</sub>",  "µA"),
+                  ("IC",  "I<sub>C</sub>",  "mA"),
+                  ("IE",  "I<sub>E</sub>",  "mA")
+                ] %}
+                  {% set b, r, d, u = results[key] %}
+                  <tr>
+                    <td class="sym">{{ sym|safe }}</td>
+                    <td class="val">{{ "%.2f" % b }} <span class="unit">{{ unit }}</span></td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
 
-          {% if results.warnings %}
-            <ul class="warnings">
-              {% for w in results.warnings %}
-                <li>{{ w }}</li>
-              {% endfor %}
-            </ul>
-          {% endif %}
+            {% if results.region == "active" %}
+              <div class="status ok">
+                <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="9"></circle>
+                  <path d="M8 12.5l2.6 2.6L16 9.5"></path>
+                </svg>
+                <div>
+                  <strong>โหมด Active — ค่าที่แสดงเชื่อถือได้</strong>
+                  <span>V<sub>CE</sub> = {{ "%.2f" % results["VCE"][0] }} V &gt; 0.2 V (ทรานซิสเตอร์อยู่ในโซน Active)</span>
+                </div>
+              </div>
+            {% else %}
+              <div class="status warn">
+                <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 3L1.5 21h21L12 3z"></path>
+                  <path d="M12 9v5M12 17.5v.5"></path>
+                </svg>
+                <div>
+                  <strong>โหมด Saturation — ค่าที่แสดงอาจไม่น่าเชื่อถือ</strong>
+                  <span>V<sub>CE</sub> = {{ "%.2f" % results["VCE"][0] }} V &lt; 0.2 V ค่า IC จริงต่ำกว่าที่โมเดลคำนวณเพราะถูกจำกัดด้วย β</span>
+                </div>
+              </div>
+            {% endif %}
 
-          <p class="model-note">
-            <strong>แบบจำลอง:</strong> {{ results.model_note }}
-          </p>
+            {% if results.warnings %}
+              <ul class="warnings">
+                {% for w in results.warnings %}
+                  <li>{{ w }}</li>
+                {% endfor %}
+              </ul>
+            {% endif %}
 
-          {% if results.mode == "divider" and results.ref_ic_ma is not none %}
-            <p class="crosscheck">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M5 12.5l4.5 4.5L19 7"></path>
-              </svg>
-              <span>
-                ตรวจสอบอิสระ (KCL แบบเต็ม คิดผลโหลดดิวิเดอร์):
-                I<sub>C</sub> = {{ "%.3f" % results.ref_ic_ma }} mA, V<sub>CE</sub> = {{ "%.3f" % results.ref_vce_v }} V
-                — ต่างจากแบบหลัก {{ "%.2f" % results.diff_ic_pct }}%
-              </span>
+            <p class="model-note">
+              <strong>แบบจำลอง:</strong> {{ results.model_note }}
             </p>
+
+            {% if results.mode == "divider" and results.ref_ic_ma is not none %}
+              <p class="crosscheck">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M5 12.5l4.5 4.5L19 7"></path>
+                </svg>
+                <span>
+                  ตรวจสอบอิสระ (KCL แบบเต็ม คิดผลโหลดดิวิเดอร์):
+                  I<sub>C</sub> = {{ "%.3f" % results.ref_ic_ma }} mA, V<sub>CE</sub> = {{ "%.3f" % results.ref_vce_v }} V
+                  — ต่างจากแบบหลัก {{ "%.2f" % results.diff_ic_pct }}%
+                </span>
+              </p>
+            {% endif %}
           {% endif %}
-        {% else %}
-          <p class="muted">เลือกโหมด กรอกค่าแล้วกด <strong>Calculate DC Bias</strong> เพื่อดูผลลัพธ์</p>
+        {% else %}เลือกโหมด กรอกค่าแล้วกด <strong>Calculate DC Bias</strong> เพื่อดูผลลัพธ์</p>
         {% endif %}
       </section>
     </div>

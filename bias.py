@@ -30,6 +30,7 @@ def calculate_bias(VCC, R1, R2, RC, RE, beta, VBE):
     หน่วยดิบ: V, Ω, A (เทมเพลตจะแปลงหน่วยแสดงผลเอง)
     """
     warnings = []
+    critical = False
 
     # Thévenin voltage at the base (open-circuit divider voltage)
     VBB = VCC * R2 / (R1 + R2)
@@ -41,6 +42,7 @@ def calculate_bias(VCC, R1, R2, RC, RE, beta, VBE):
     # Region detection
     if VBB <= VBE:
         region = "cutoff"
+        critical = True
         warnings.append("Cutoff: VBB ≤ VBE, โมเดล Forward-Active ใช้ไม่ได้")
     else:
         region = "active"
@@ -54,6 +56,7 @@ def calculate_bias(VCC, R1, R2, RC, RE, beta, VBE):
 
     if VCE < 0.2:
         region = "saturation"
+        critical = True
         warnings.append(
             "Saturation: VCE < 0.2 V, ค่า IC จริงต่ำกว่าที่โมเดลคำนวณเพราะจำกัดด้วย β"
         )
@@ -72,6 +75,7 @@ def calculate_bias(VCC, R1, R2, RC, RE, beta, VBE):
         "VC": VC,
         "VCE": VCE,
         "region": region,
+        "critical": critical,
         "warnings": warnings,
     }
 
@@ -99,12 +103,15 @@ def calculate_fixed_bias(VCC, RB, RC, beta, VBE):
 
     # Base current (กันค่า RB = 0 เพื่อไม่ให้เกิด ZeroDivisionError)
     region = "active"
+    critical = False
     if RB <= 0:
         region = "cutoff"
+        critical = True
         warnings.append("Cutoff: RB ≤ 0, โมเดล Forward-Active ใช้ไม่ได้")
         IB = 0.0
     elif VCC <= VBE:
         region = "cutoff"
+        critical = True
         warnings.append("Cutoff: VCC ≤ VBE, โมเดล Forward-Active ใช้ไม่ได้")
         IB = (VCC - VBE) / RB
     else:
@@ -119,6 +126,7 @@ def calculate_fixed_bias(VCC, RB, RC, beta, VBE):
 
     if VCE < 0.2:
         region = "saturation"
+        critical = True
         warnings.append(
             "Saturation: VCE < 0.2 V, ค่า IC จริงต่ำกว่าที่โมเดลคำนวณเพราะจำกัดด้วย β"
         )
@@ -137,6 +145,7 @@ def calculate_fixed_bias(VCC, RB, RC, beta, VBE):
         "VC": VC,
         "VCE": VCE,
         "region": region,
+        "critical": critical,
         "warnings": warnings,
     }
 
@@ -158,6 +167,7 @@ def calculate_emitter_bias(VCC, RB, RC, RE, beta, VBE):
     หน่วยดิบ: V, Ω, A
     """
     warnings = []
+    critical = False
 
     # แรงดันที่ขั้วเบส (คำนวณทีหลังเมื่อรู้ VE แล้ว)
     VBB = None  # จะกำหนดค่าจริงหลังคำนวณ VB
@@ -166,10 +176,12 @@ def calculate_emitter_bias(VCC, RB, RC, RE, beta, VBE):
     region = "active"
     if RB <= 0:
         region = "cutoff"
+        critical = True
         warnings.append("Cutoff: RB ≤ 0, โมเดล Forward-Active ใช้ไม่ได้")
         IB = 0.0
     elif VCC <= VBE:
         region = "cutoff"
+        critical = True
         warnings.append("Cutoff: VCC ≤ VBE, โมเดล Forward-Active ใช้ไม่ได้")
         IB = (VCC - VBE) / (RB + (beta + 1) * RE)
     else:
@@ -185,6 +197,7 @@ def calculate_emitter_bias(VCC, RB, RC, RE, beta, VBE):
 
     if VCE < 0.2:
         region = "saturation"
+        critical = True
         warnings.append(
             "Saturation: VCE < 0.2 V, ค่า IC จริงต่ำกว่าที่โมเดลคำนวณเพราะจำกัดด้วย β"
         )
@@ -203,5 +216,6 @@ def calculate_emitter_bias(VCC, RB, RC, RE, beta, VBE):
         "VC": VC,
         "VCE": VCE,
         "region": region,
+        "critical": critical,
         "warnings": warnings,
     }
