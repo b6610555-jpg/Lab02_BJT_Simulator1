@@ -72,7 +72,14 @@
               <div class="input-row">
                 <input id="f-{{ field }}" type="text" name="{{ field }}" step="{{ step }}"
                        value="{{ values.get(field, '') }}">
-                <span class="unit-chip">{{ unit }}</span>
+                {% if field in ["RC", "R1", "R2", "RE", "RB"] %}
+                  <select name="{{ field }}_unit" class="unit-select">
+                    <option value="k" {% if unit == "kΩ" %}selected{% endif %}>kΩ</option>
+                    <option value="M" {% if unit == "MΩ" %}selected{% endif %}>MΩ</option>
+                  </select>
+                {% else %}
+                  <span class="unit-chip">{{ unit }}</span>
+                {% endif %}
               </div>
             </div>
           {% endfor %}
@@ -88,7 +95,10 @@
                 <div class="input-row">
                   <input id="f-{{ field }}" type="text" name="{{ field }}" step="{{ step }}"
                          value="{{ values.get(field, '') }}">
-                  <span class="unit-chip">{{ unit }}</span>
+                  <select name="{{ field }}_unit" class="unit-select">
+                    <option value="k" {% if unit == "kΩ" %}selected{% endif %}>kΩ</option>
+                    <option value="M" {% if unit == "MΩ" %}selected{% endif %}>MΩ</option>
+                  </select>
                 </div>
               </div>
             {% endfor %}
@@ -98,7 +108,10 @@
               <div class="input-row">
                 <input id="f-RB" type="text" name="RB" step="0.1"
                        value="{{ values.get('RB', '') }}">
-                <span class="unit-chip">kΩ</span>
+                <select name="RB_unit" class="unit-select">
+                  <option value="k" selected>kΩ</option>
+                  <option value="M">MΩ</option>
+                </select>
               </div>
             </div>
           {% elif selected_mode == "emitter" %}
@@ -111,7 +124,10 @@
                 <div class="input-row">
                   <input id="f-{{ field }}" type="text" name="{{ field }}" step="{{ step }}"
                          value="{{ values.get(field, '') }}">
-                  <span class="unit-chip">{{ unit }}</span>
+                  <select name="{{ field }}_unit" class="unit-select">
+                    <option value="k" {% if unit == "kΩ" %}selected{% endif %}>kΩ</option>
+                    <option value="M" {% if unit == "MΩ" %}selected{% endif %}>MΩ</option>
+                  </select>
                 </div>
               </div>
             {% endfor %}
@@ -422,6 +438,17 @@
   </div>
   <style>
     .hidden { display: none !important; }
+    .unit-select {
+      flex: 0 0 auto;
+      padding: 5px 8px;
+      font-size: .74rem;
+      color: var(--muted);
+      background: #f4f7fa;
+      border: 1px solid #dbe5ee;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .unit-select:focus { outline: none; border-color: var(--teal); }
   </style>
 </body>
 </html>
