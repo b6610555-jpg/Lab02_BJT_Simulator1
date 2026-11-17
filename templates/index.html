@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Lab 02: BJT DC Bias Web App</title>
+  <title>Lab 03: BJT DC Bias Web App</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
@@ -19,8 +19,8 @@
           </svg>
         </div>
         <div class="brand-text">
-          <h1>Lab 02: BJT DC Bias Web App</h1>
-          <p>ENG29 2121 — Common-Emitter (Voltage Divider Bias)</p>
+          <h1>Lab 03: BJT DC Bias Web App</h1>
+          <p>ENG29 2121 — Common-Emitter (Fixed / Emitter / Voltage Divider Bias)</p>
         </div>
       </div>
       <div class="course-badge">
@@ -47,16 +47,27 @@
         </h2>
 
         <form method="post" action="/" class="bias-form">
+          <!-- เลือกโหมดวงจร -->
+          <div class="field">
+            <label for="f-mode">โหมดวงจรไบอัส</label>
+            <div class="input-row">
+              <select id="f-mode" name="mode" onchange="this.form.submit()">
+                {% for mode_id, mode_label in modes.items() %}
+                  <option value="{{ mode_id }}" {% if selected_mode == mode_id %}selected{% endif %}>
+                    {{ mode_label }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
           {% for field, label, unit, step in [
             ("VCC",  "V<sub>CC</sub> (Supply Voltage)",       "V",  "0.1"),
-            ("R1",   "R<sub>1</sub> (Upper Divider)",          "kΩ", "0.1"),
-            ("R2",   "R<sub>2</sub> (Lower Divider)",          "kΩ", "0.1"),
             ("RC",   "R<sub>C</sub> (Collector Resistor)",     "kΩ", "0.1"),
-            ("RE",   "R<sub>E</sub> (Emitter Resistor)",       "kΩ", "0.1"),
             ("beta", "β (Current Gain)",                      "—",  "1"),
             ("VBE",  "V<sub>BE</sub> (Base-Emitter Voltage)",  "V",  "0.01")
           ] %}
-            <div class="field">
+            <div class="field{% if field not in mode_fields %} hidden{% endif %}">
               <label for="f-{{ field }}">{{ label|safe }}</label>
               <div class="input-row">
                 <input id="f-{{ field }}" type="text" name="{{ field }}" step="{{ step }}"
@@ -65,6 +76,46 @@
               </div>
             </div>
           {% endfor %}
+
+          {% if selected_mode == "divider" %}
+            {% for field, label, unit, step in [
+              ("R1",   "R<sub>1</sub> (Upper Divider)",          "kΩ", "0.1"),
+              ("R2",   "R<sub>2</sub> (Lower Divider)",          "kΩ", "0.1"),
+              ("RE",   "R<sub>E</sub> (Emitter Resistor)",       "kΩ", "0.1")
+            ] %}
+              <div class="field">
+                <label for="f-{{ field }}">{{ label|safe }}</label>
+                <div class="input-row">
+                  <input id="f-{{ field }}" type="text" name="{{ field }}" step="{{ step }}"
+                         value="{{ values.get(field, '') }}">
+                  <span class="unit-chip">{{ unit }}</span>
+                </div>
+              </div>
+            {% endfor %}
+          {% elif selected_mode == "fixed" %}
+            <div class="field">
+              <label for="f-RB">R<sub>B</sub> (Base Resistor)</label>
+              <div class="input-row">
+                <input id="f-RB" type="text" name="RB" step="0.1"
+                       value="{{ values.get('RB', '') }}">
+                <span class="unit-chip">kΩ</span>
+              </div>
+            </div>
+          {% elif selected_mode == "emitter" %}
+            {% for field, label, unit, step in [
+              ("RB",   "R<sub>B</sub> (Base Resistor)",          "kΩ", "0.1"),
+              ("RE",   "R<sub>E</sub> (Emitter Resistor)",       "kΩ", "0.1")
+            ] %}
+              <div class="field">
+                <label for="f-{{ field }}">{{ label|safe }}</label>
+                <div class="input-row">
+                  <input id="f-{{ field }}" type="text" name="{{ field }}" step="{{ step }}"
+                         value="{{ values.get(field, '') }}">
+                  <span class="unit-chip">{{ unit }}</span>
+                </div>
+              </div>
+            {% endfor %}
+          {% endif %}
 
           <button type="submit">
             <svg class="ico-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -85,34 +136,68 @@
             <circle cx="19" cy="12" r="2"></circle>
             <path d="M7 6h4v6h4M7 18h4v-6h4"></path>
           </svg>
-          Circuit: Common-Emitter Amplifier
+          Circuit: Common-Emitter {{ modes[selected_mode] }}
         </h2>
 
         <div class="circuit-box">
           <svg viewBox="0 0 300 340" class="circuit" xmlns="http://www.w3.org/2000/svg"
                role="img" aria-labelledby="circuit-title">
-            <title id="circuit-title">BJT Common-Emitter Voltage Divider Bias circuit</title>
+            <title id="circuit-title">BJT Common-Emitter {{ modes[selected_mode] }} circuit</title>
 
             <!-- VCC rail -->
             <line x1="28" y1="40" x2="258" y2="40" stroke="#333" stroke-width="2"/>
             <circle cx="170" cy="40" r="3.6" fill="#333"/>
-            <text x="170" y="24" text-anchor="middle" font-size="11.5" fill="#222">V<tspan font-size="8" dy="3">CC</tspan><tspan dy="-3"> = 12 V</tspan></text>
+            <text x="170" y="24" text-anchor="middle" font-size="11.5" fill="#222">V<tspan font-size="8" dy="3">CC</tspan><tspan dy="-3"> = {{ values.get('VCC', 12) }} V</tspan></text>
 
-            <!-- R1 : VCC rail down to base node -->
-            <polyline points="70,40 70,52 64,60 76,68 64,76 76,84 70,92 70,175"
-                      fill="none" stroke="#333" stroke-width="1.9" stroke-linejoin="round"/>
-            <text x="54" y="66" text-anchor="end" font-size="11" fill="#222">R<tspan font-size="8" dy="2">1</tspan></text>
-            <text x="54" y="81" text-anchor="end" font-size="10" fill="#5a6b7b">{{ values.get('R1', 0) }} kΩ</text>
+            {% if selected_mode == "divider" %}
+              <!-- R1 : VCC rail down to base node -->
+              <polyline points="70,40 70,52 64,60 76,68 64,76 76,84 70,92 70,175"
+                        fill="none" stroke="#333" stroke-width="1.9" stroke-linejoin="round"/>
+              <text x="54" y="66" text-anchor="end" font-size="11" fill="#222">R<tspan font-size="8" dy="2">1</tspan></text>
+              <text x="54" y="81" text-anchor="end" font-size="10" fill="#5a6b7b">{{ values.get('R1', 0) }} kΩ</text>
 
-            <!-- base node -->
-            <circle cx="70" cy="175" r="3" fill="#333"/>
+              <!-- base node -->
+              <circle cx="70" cy="175" r="3" fill="#333"/>
 
-            <!-- R2 : base node down to ground -->
-            <polyline points="70,175 70,185 64,193 76,201 64,209 76,217 70,225 70,306"
-                      fill="none" stroke="#333" stroke-width="1.9" stroke-linejoin="round"/>
-            <text x="54" y="199" text-anchor="end" font-size="11" fill="#222">R<tspan font-size="8" dy="2">2</tspan></text>
-            <text x="54" y="214" text-anchor="end" font-size="10" fill="#5a6b7b">{{ values.get('R2', 0) }} kΩ</text>
-            <path d="M58 306 H82 M64 312 H76 M68 318 H70" stroke="#333" stroke-width="1.7" fill="none"/>
+              <!-- R2 : base node down to ground -->
+              <polyline points="70,175 70,185 64,193 76,201 64,209 76,217 70,225 70,306"
+                        fill="none" stroke="#333" stroke-width="1.9" stroke-linejoin="round"/>
+              <text x="54" y="199" text-anchor="end" font-size="11" fill="#222">R<tspan font-size="8" dy="2">2</tspan></text>
+              <text x="54" y="214" text-anchor="end" font-size="10" fill="#5a6b7b">{{ values.get('R2', 0) }} kΩ</text>
+              <path d="M58 306 H82 M64 312 H76 M68 318 H70" stroke="#333" stroke-width="1.7" fill="none"/>
+
+            {% elif selected_mode == "fixed" %}
+              <!-- RB : VCC rail down to base node -->
+              <polyline points="70,40 70,52 64,60 76,68 64,76 76,84 70,92 70,175"
+                        fill="none" stroke="#333" stroke-width="1.9" stroke-linejoin="round"/>
+              <text x="54" y="66" text-anchor="end" font-size="11" fill="#222">R<tspan font-size="8" dy="2">B</tspan></text>
+              <text x="54" y="81" text-anchor="end" font-size="10" fill="#5a6b7b">{{ values.get('RB', 0) }} kΩ</text>
+
+              <!-- base node -->
+              <circle cx="70" cy="175" r="3" fill="#333"/>
+
+              <!-- Emitter to ground directly -->
+              <line x1="70" y1="175" x2="70" y2="306" stroke="#333" stroke-width="1.9"/>
+              <path d="M58 306 H82 M64 312 H76 M68 318 H70" stroke="#333" stroke-width="1.7" fill="none"/>
+
+            {% elif selected_mode == "emitter" %}
+              <!-- RB : VCC rail down to base node -->
+              <polyline points="70,40 70,52 64,60 76,68 64,76 76,84 70,92 70,175"
+                        fill="none" stroke="#333" stroke-width="1.9" stroke-linejoin="round"/>
+              <text x="54" y="66" text-anchor="end" font-size="11" fill="#222">R<tspan font-size="8" dy="2">B</tspan></text>
+              <text x="54" y="81" text-anchor="end" font-size="10" fill="#5a6b7b">{{ values.get('RB', 0) }} kΩ</text>
+
+              <!-- base node -->
+              <circle cx="70" cy="175" r="3" fill="#333"/>
+
+              <!-- Emitter to RE to ground -->
+              <line x1="70" y1="175" x2="70" y2="235" stroke="#333" stroke-width="1.9"/>
+              <polyline points="70,235 70,245 64,253 76,261 64,269 76,277 70,285 70,306"
+                        fill="none" stroke="#333" stroke-width="1.9" stroke-linejoin="round"/>
+              <text x="86" y="252" font-size="11" fill="#222">R<tspan font-size="8" dy="2">E</tspan></text>
+              <text x="86" y="267" text-anchor="start" font-size="10" fill="#5a6b7b">{{ values.get('RE', 0) }} kΩ</text>
+              <path d="M58 306 H82 M64 312 H76 M68 318 H70" stroke="#333" stroke-width="1.7" fill="none"/>
+            {% endif %}
 
             <!-- base lead -->
             <line x1="70" y1="175" x2="140" y2="175" stroke="#333" stroke-width="1.9"/>
@@ -137,15 +222,21 @@
 
             <!-- emitter to RE -->
             <line x1="178" y1="224" x2="205" y2="224" stroke="#333" stroke-width="1.9"/>
-            <line x1="205" y1="224" x2="205" y2="235" stroke="#333" stroke-width="1.9"/>
-            <polyline points="205,235 205,245 199,253 211,261 199,269 211,277 205,285 205,306"
-                      fill="none" stroke="#333" stroke-width="1.9" stroke-linejoin="round"/>
-            <text x="221" y="252" font-size="11" fill="#222">R<tspan font-size="8" dy="2">E</tspan></text>
-            <text x="221" y="267" font-size="10" fill="#5a6b7b">{{ values.get('RE', 0) }} kΩ</text>
-            <path d="M193 306 H217 M199 312 H211 M203 318 H205" stroke="#333" stroke-width="1.7" fill="none"/>
+            {% if selected_mode == "divider" or selected_mode == "emitter" %}
+              <line x1="205" y1="224" x2="205" y2="235" stroke="#333" stroke-width="1.9"/>
+              <polyline points="205,235 205,245 199,253 211,261 199,269 211,277 205,285 205,306"
+                        fill="none" stroke="#333" stroke-width="1.9" stroke-linejoin="round"/>
+              <text x="221" y="252" font-size="11" fill="#222">R<tspan font-size="8" dy="2">E</tspan></text>
+              <text x="221" y="267" text-anchor="start" font-size="10" fill="#5a6b7b">{{ values.get('RE', 0) }} kΩ</text>
+              <path d="M193 306 H217 M199 312 H211 M203 318 H205" stroke="#333" stroke-width="1.7" fill="none"/>
+            {% else %}
+              <!-- Fixed Bias: emitter straight to ground -->
+              <line x1="205" y1="224" x2="205" y2="306" stroke="#333" stroke-width="1.9"/>
+              <path d="M193 306 H217 M199 312 H211 M203 318 H205" stroke="#333" stroke-width="1.7" fill="none"/>
+            {% endif %}
           </svg>
         </div>
-        <p class="circuit-caption">Voltage-Divider Bias — ภาพประกอบวงจร (ไม่ใช่ผลจำลอง)</p>
+        <p class="circuit-caption">{{ modes[selected_mode] }} — ภาพประกอบวงจร (ไม่ใช่ผลจำลอง)</p>
       </section>
 
       <!-- ---------- 3. DC Bias Results ---------- -->
@@ -154,7 +245,7 @@
           <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
             <path d="M4 20V10M10 20V4M16 20v-7M22 20H2"></path>
           </svg>
-          DC Bias Results
+          DC Bias Results — {{ modes[selected_mode] }}
         </h2>
 
         {% if results %}
@@ -214,35 +305,36 @@
             <strong>แบบจำลอง:</strong> {{ results.model_note }}
           </p>
 
-          <p class="crosscheck">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M5 12.5l4.5 4.5L19 7"></path>
-            </svg>
-            <span>
-              ตรวจสอบอิสระ (KCL แบบเต็ม คิดผลโหลดดิวิเดอร์):
-              I<sub>C</sub> = {{ "%.3f" % results.ref_ic_ma }} mA, V<sub>CE</sub> = {{ "%.3f" % results.ref_vce_v }} V
-              — ต่างจากแบบหลัก {{ "%.2f" % results.diff_ic_pct }}%
-            </span>
-          </p>
+          {% if results.mode == "divider" and results.ref_ic_ma is not none %}
+            <p class="crosscheck">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12.5l4.5 4.5L19 7"></path>
+              </svg>
+              <span>
+                ตรวจสอบอิสระ (KCL แบบเต็ม คิดผลโหลดดิวิเดอร์):
+                I<sub>C</sub> = {{ "%.3f" % results.ref_ic_ma }} mA, V<sub>CE</sub> = {{ "%.3f" % results.ref_vce_v }} V
+                — ต่างจากแบบหลัก {{ "%.2f" % results.diff_ic_pct }}%
+              </span>
+            </p>
+          {% endif %}
         {% else %}
-          <p class="muted">กรอกค่าแล้วกด <strong>Calculate DC Bias</strong> เพื่อดูผลลัพธ์</p>
+          <p class="muted">เลือกโหมด กรอกค่าแล้วกด <strong>Calculate DC Bias</strong> เพื่อดูผลลัพธ์</p>
         {% endif %}
       </section>
     </div>
 
-    <!-- ============ Week 2 Goal bar ============ -->
+    <!-- ============ Week 3 Goal bar ============ -->
     <div class="goal-bar">
       <span class="goal-chip">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="9"></circle>
           <path d="M12 8v4l3 2"></path>
         </svg>
-        Week 2 Goal
+        Week 3 Goal
       </span>
       <span class="goal-text">
-        Rough target for this lab: Build a Flask web app that takes the circuit parameters, computes the BJT DC bias
-        (V<sub>B</sub>, V<sub>E</sub>, V<sub>C</sub>, V<sub>CE</sub>, I<sub>B</sub>, I<sub>C</sub>, I<sub>E</sub>) for a common-emitter
-        amplifier with voltage-divider bias, and displays the results.
+        เลือกวงจรไบอัสได้สามแบบ (Fixed / Emitter / Voltage Divider) คำนวณจุดทำงานกระแสตรงด้วย Python
+        และเปรียบเทียบผลบนหน้าเว็บกับค่าที่คำนวณไว้ล่วงหน้า
       </span>
     </div>
 
@@ -250,5 +342,8 @@
       รันบน <code>http://127.0.0.1:5000/</code> · Python Backend คำนวณจริง ไม่ใช่ค่าที่เขียนไว้ใน HTML
     </footer>
   </div>
+  <style>
+    .hidden { display: none !important; }
+  </style>
 </body>
 </html>
