@@ -55,6 +55,9 @@ MODE_FIELDS = {
 RESISTOR_FIELDS = ["R1", "R2", "RC", "RE", "RB"]
 
 
+UNIT_MULTIPLIERS = {"k": 1.0, "M": 1000.0}
+
+
 def parse_resistor(raw):
     """แปลงค่าตัวต้านทานที่อาจมีตัวต่อ k/K หรือ M/M คืนค่าเป็น kΩ
 
@@ -82,7 +85,7 @@ def validate(form, mode):
     """ตรวจสอบค่าอินพุตจากฟอร์ม คืน (values_dict, error_message_or_None)
 
     ตรวจเฉพาะฟิลด์ที่โหมดนั้นต้องการเท่านั้น
-    ตัวต้านทานรับค่าที่มีตัวต่อ k/K หรือ M/M ได้ (เช่น 1k, 1M)
+    ตัวต้านทานรับทั้งการพิมพ์ตัวต่อ k/M ท้ายค่า (เช่น 1k, 1M) และการเลือกหน่วยจาก dropdown
     ค่าที่คืนมายังเป็นหน่วยที่ผู้ใช้กรอก (kΩ สำหรับตัวต้านทาน)
     """
     if mode not in MODES:
@@ -92,10 +95,26 @@ def validate(form, mode):
     for field in MODE_FIELDS[mode]:
         raw = form.get(field, "").strip()
         if field in RESISTOR_FIELDS:
-            val, err = parse_resistor(raw)
-            if err:
-                return None, f"ค่า {field} {err}"
-            values[field] = val
+            # อ่านหน่วยจาก dropdown (ค่าเริ่มต้น k = kΩ)
+            unit_raw = form.get(field + "_unit", "k")
+            multiplier = UNIT_MULTIPLIERS.get(unit_raw, 1.0)
+            # ยังรองรับการพิมพ์ตัวต่อ k/K/M ท้ายค่าได้ด้วย (จะ override dropdown)
+            effective_raw = raw
+            if raw and raw[-1] in ("k", "K"):
+                effective_raw = raw[:-1]
+                multiplier = 1.0
+            elif raw and raw[-1] in ("M",):
+                effective_raw = raw[:-1]
+                multiplier = 1000.0
+            if effective_raw == "":
+                return None, f"กรุณากรอกค่า {field}"
+            try:
+                val = float(effective_raw)
+            except ValueError:
+                return None, f"ค่า {field} ต้องเป็นตัวเลข"
+            if val <= 0:
+                return None, f"ค่า {field} ต้องมากกว่า 0"
+            values[field] = val * multiplier
         else:
             if raw == "":
                 return None, f"กรุณากรอกค่า {field}"
@@ -281,14 +300,35 @@ def calculate():
     mode = data.get("mode", "divider")
     values = {}
     for field in MODE_FIELDS.get(mode, []):
-        try:
-            val = float(data.get(field, ""))
-        except (TypeError, ValueError):
-            return jsonify({"error": f"ค่า {field} ต้องเป็นตัวเลข"}), 400
-        if val <= 0:
-            return jsonify({"error": f"ค่า {field} ต้องมากกว่า 0"}), 400
-        values[field] = val
-
+        raw = str(data.get(field, "")).strip()
+        if field in RESISTOR_FIELDS:
+            unit_raw = str(data.get(field + "_unit", "k"))
+            multiplier = UNIT_MULTIPLIERS.get(unit_raw, 1.0)
+            if raw and raw[-1] in ("k", "K"):
+                raw = raw[:-1]
+                multiplier = 1.0
+            elif raw and raw[-1] in ("M",):
+                raw = raw[:-1]
+                multiplier = 1000.0
+            if raw == "":
+                return jsonify({"error": f"กรุณากรอกค่า {field}"}, 400)
+            try:
+                val = float(raw)
+            except ValueError:
+                return jsonify({"error": f"ค่า {field} ต้องเป็นตัวเลข"}, 400)
+            if val <= 0:
+                return jsonify({"error": f"ค่า {field} ต้องมากกว่า 0"}, 400)
+            values[field] = val * multiplier
+        else:
+            if raw == "":
+                return jsonify({"error": f"กรุณากรอกค่า {field}"}, 400)
+            try:
+                val = float(raw)
+            except ValueError:
+                return jsonify({"error": f"ค่า {field} ต้องเป็นตัวเลข"}, 400)
+            if val <= 0:
+                return jsonify({"error": f"ค่า {field} ต้องมากกว่า 0"}, 400)
+            values[field] = val
     results = _compute(to_ohms(values), mode)
     if results is None:
         return jsonify({"error": f"โหมดวงจร '{mode}' ไม่รู้จัก"}), 400
