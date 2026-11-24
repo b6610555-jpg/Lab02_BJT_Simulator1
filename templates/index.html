@@ -486,21 +486,6 @@
       </form>
 
       {% if not sim %}
-        <div class="mode-toggle" role="group" aria-label="เลือกโหมดการวิเคราะห์">
-          {% for mode_id, mode_label in [("dc", "DC"), ("ac", "AC"), ("tran", "Transient")] %}
-            <form method="post" action="/simulate" class="mode-form">
-              {% for field, value in sim_values.items() %}
-                {% if field != 'analysis' and field != 'mode' %}
-                  <input type="hidden" name="{{ field }}" value="{{ value }}">
-                {% endif %}
-              {% endfor %}
-              <button type="submit" name="analysis" value="{{ mode_id }}"
-                      class="mode-btn {% if sim_values.get('analysis', 'dc') == mode_id %}active{% endif %}">
-                {{ mode_label }}
-              </button>
-            </form>
-          {% endfor %}
-        </div>
         <p class="sim-placeholder">
           เลือก analysis แล้วกด <strong>Run ngspice</strong> เพื่อรัน ngspice จริงบนเครื่องนี้
           — ค่าที่แสดงจะเป็น SPICE output ที่ parse แล้ว ไม่ใช่ค่าประมาณ
@@ -512,23 +497,6 @@
 
       {% if sim %}
         <div class="sim-result">
-          <!-- Mode selector buttons (design doc: DC / AC / Transient) -->
-          <div class="mode-toggle" role="group" aria-label="เลือกโหมดการวิเคราะห์">
-            {% for mode_id, mode_label in [("dc", "DC"), ("ac", "AC"), ("tran", "Transient")] %}
-              <form method="post" action="/simulate" class="mode-form">
-                {% for field, value in sim_values.items() %}
-                  {% if field != 'analysis' and field != 'mode' %}
-                    <input type="hidden" name="{{ field }}" value="{{ value }}">
-                  {% endif %}
-                {% endfor %}
-                <button type="submit" name="analysis" value="{{ mode_id }}"
-                        class="mode-btn {% if sim.analysis == mode_id %}active{% endif %}">
-                  {{ mode_label }}
-                </button>
-              </form>
-            {% endfor %}
-          </div>
-
           <div class="sim-result-head">
             <span class="badge badge-spice">SPICE RESULT</span>
             <span class="sim-meta">

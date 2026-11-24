@@ -219,47 +219,7 @@ nav a:focus-visible {
   gap: 5px;
 }
 
-/* ---- Mode toggle buttons (design doc: DC / AC / Transient) ---- */
-.mode-toggle {
-  display: flex;
-  gap: 6px;
-  margin-bottom: 12px;
-}
-
-.mode-toggle .mode-form {
-  margin: 0;
-  display: inline;
-}
-
-.mode-btn {
-  padding: 6px 16px;
-  border: 1px solid #d5e2ec;
-  border-radius: 6px;
-  background: #f2f7f9;
-  color: #33546f;
-  font: inherit;
-  font-weight: 600;
-  font-size: .76rem;
-  cursor: pointer;
-  transition: all .15s;
-}
-
-.mode-btn:hover {
-  border-color: var(--teal);
-  color: var(--teal-dk);
-  background: #eaf6f2;
-}
-
-.mode-btn.active {
-  background: var(--teal);
-  border-color: var(--teal);
-  color: #fff;
-}
-
-.mode-btn.active:hover {
-  background: var(--teal);
-  color: #fff;
-}
+/* ---- (mode toggle removed) ---- */
 
 /* ---------------- Grid ---------------- */
 .lab-grid {
