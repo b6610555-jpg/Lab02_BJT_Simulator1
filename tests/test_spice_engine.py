@@ -5,6 +5,8 @@ import pytest
 
 import spice_engine as se
 
+FIXTURES = Path(__file__).parent / "fixtures"
+
 BASE = {
     "vcc_v": 12.0,
     "r1_ohm": 100_000.0,
@@ -88,3 +90,20 @@ def test_build_netlist_ac_and_tran_directives():
     assert ".tran" in tran and "UIC" in tran
     assert "CIN vin base 1e-05 IC=-1.949127" in tran
     assert "COUT coll out 1e-05 IC=9.189633" in tran
+
+
+def test_parse_op_fixture():
+    data = se.parse_op((FIXTURES / "op_baseline.log").read_text())
+    assert data["vb"] == pytest.approx(1.949127, abs=1e-5)
+    assert data["ve"] == pytest.approx(1.289352, abs=1e-5)
+    assert data["vc"] == pytest.approx(9.189633, abs=1e-5)
+    assert data["vce"] == pytest.approx(7.900281, abs=1e-5)
+    assert data["ic"] == pytest.approx(1.278092e-3, rel=1e-4)
+    assert data["ib"] == pytest.approx(1.191812e-5, rel=1e-4)
+    assert data["ie"] == pytest.approx(1.29001e-3, rel=1e-4)
+    assert data["region"] == "active"
+
+
+def test_parse_op_rejects_empty_log():
+    with pytest.raises(se.ParseError):
+        se.parse_op("")

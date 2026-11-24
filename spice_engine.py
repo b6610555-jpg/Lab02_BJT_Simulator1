@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import math
 import os
+import re
 import shutil
 from pathlib import Path
 
@@ -223,3 +224,121 @@ def build_netlist(params: dict, analysis: str, op_result: dict | None = None) ->
 
     lines.append(".end")
     return "\n".join(lines) + "\n"
+
+
+_NODE_ROW = re.compile(r"^\s*([A-Za-z_][A-Za-z0-9_]*)\s+([-+0-9.eE]+)\s*$")
+_Q1_CURRENT = re.compile(
+    r"@q1\[(ic|ib|ie)\]\s+([-+0-9.eE]+)", re.IGNORECASE
+)
+_DEVICE_CURRENT = re.compile(r"^\s*(ic|ib|ie)\s+([-+0-9.eE]+)\s*$")
+
+
+def _parse_node_table(lines) -> dict[str, float]:
+    nodes: dict[str, float] = {}
+    for index, line in enumerate(lines):
+        if re.match(r"^\s*Node\s+Voltage\s*$", line):
+            for row in lines[index + 1:]:
+                if not row.strip():
+                    break
+                match = _NODE_ROW.match(row)
+                if match:
+                    nodes[match.group(1).lower()] = float(match.group(2))
+            break
+    return nodes
+
+
+def _parse_q1_currents(lines) -> dict[str, float]:
+    currents: dict[str, float] = {}
+    for line in lines:
+        match = _Q1_CURRENT.search(line)
+        if match:
+            currents[match.group(1).lower()] = float(match.group(2))
+    return currents
+
+
+def _parse_bjt_device_currents(lines) -> dict[str, float]:
+    """Read ic/ib/ie from the ngspice BJT device table."""
+    start = None
+    for index, line in enumerate(lines):
+        if line.strip() == "BJT: Bipolar Junction Transistor":
+            start = index + 1
+            break
+    if start is None:
+        return {}
+    currents: dict[str, float] = {}
+    for line in lines[start:]:
+        if not line.strip():
+            break
+        match = _DEVICE_CURRENT.match(line)
+        if match:
+            currents[match.group(1).lower()] = float(match.group(2))
+    return currents
+
+
+def parse_op(log: str) -> dict:
+    """Parse a real ngspice ``.op`` log into node voltages and currents.
+
+    ``ic``, ``ib`` and ``ie`` are reported as positive magnitudes.  If the
+    ``@q1[...]`` print table is missing, the values are taken from the
+    ngspice BJT device table and a warning records that fallback.
+    """
+    if not log or not log.strip():
+        raise ParseError("ngspice .op output ว่าง ไม่มีข้อมูลให้ parse")
+
+    lines = log.splitlines()
+    nodes = _parse_node_table(lines)
+    if not nodes:
+        raise ParseError("ไม่พบ node voltage table ใน ngspice .op output")
+
+    warnings: list[str] = []
+    currents = _parse_q1_currents(lines)
+    if not all(key in currents for key in ("ic", "ib", "ie")):
+        device = _parse_bjt_device_currents(lines)
+        for key, value in device.items():
+            currents.setdefault(key, value)
+        if all(key in currents for key in ("ic", "ib", "ie")):
+            warnings.append(
+                "ไม่พบ @q1[...] ใน .op output: ใช้ค่ากระแสจาก BJT device table "
+                "ของ ngspice แทน"
+            )
+    if not all(key in currents for key in ("ic", "ib", "ie")):
+        raise ParseError("ไม่พบกระแส @q1[ic/ib/ie] ใน ngspice .op output")
+
+    vb = nodes.get("base", 0.0)
+    ve = nodes.get("emit", 0.0)
+    vc = nodes.get("coll", 0.0)
+    if "vin" in nodes:
+        vin = nodes["vin"]
+    else:
+        vin = nodes.get("in", 0.0)
+    vcc = nodes.get("vcc", 0.0)
+    vout = nodes.get("out", 0.0)
+
+    ic = abs(currents["ic"])
+    ib = abs(currents["ib"])
+    ie = abs(currents["ie"])
+    vce = vc - ve
+
+    if ic < 1e-9 or vb < 0.4:
+        region = "cutoff"
+    elif vce < 0.2:
+        region = "saturation"
+    else:
+        region = "active"
+
+    return {
+        "nodes": nodes,
+        "vb": vb,
+        "ve": ve,
+        "vc": vc,
+        "vout": vout,
+        "vin": vin,
+        "vcc": vcc,
+        "vce": vce,
+        "ic": ic,
+        "ib": ib,
+        "ie": ie,
+        "region": region,
+        "warnings": warnings,
+        "source": "ngspice .op",
+    }
