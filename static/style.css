@@ -651,6 +651,33 @@ button:hover { background: var(--teal-dk); }
 }
 
 .sim-pane-left .sim-actions { margin-top: 10px; }
+.sim-pane-left .circuit-mode-field select {
+  width: 100%;
+  padding: 6px 8px;
+  font: inherit;
+  font-size: .8rem;
+  color: var(--ink);
+  border: 1px solid #c8d8e4;
+  border-radius: 5px;
+  background: #fcfdfe;
+  cursor: pointer;
+}
+.sim-pane-left .circuit-mode-field label {
+  font-size: .74rem;
+  color: var(--ink);
+  margin-bottom: 4px;
+  display: block;
+}
+.mode-note {
+  margin: 6px 0 10px;
+  font-size: .7rem;
+  color: var(--muted);
+  line-height: 1.4;
+  padding: 6px 8px;
+  background: #f2f6fa;
+  border-left: 3px solid #b9cfe0;
+  border-radius: 0 5px 5px 0;
+}
 .sim-pane-center .chart { margin-top: 0; }
 .sim-pane-right .sim-meta { display: block; margin-bottom: 10px; }
 

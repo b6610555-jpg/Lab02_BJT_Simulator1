@@ -530,7 +530,7 @@ def _sim_template_defaults():
 
 @app.route("/", methods=["GET", "POST"])
 def index():
-    mode = request.form.get("mode", DEFAULTS["mode"])
+    mode = request.form.get("mode") or request.args.get("mode") or DEFAULTS["mode"]
     if mode not in MODES:
         mode = DEFAULTS["mode"]
 
@@ -564,7 +564,8 @@ def index():
 
     # GET: แสดงฟอร์มพร้อมค่าเริ่มต้นและผลคำนวณเริ่มต้น
     defaults_omega = {k: float(v) for k, v in DEFAULTS.items() if k != "mode"}
-    results = _compute(defaults_omega, DEFAULTS["mode"])
+    defaults_omega = to_ohms(defaults_omega)
+    results = _compute(defaults_omega, mode)
 
     return render_template(
         "index.html",
@@ -572,8 +573,8 @@ def index():
         values=DEFAULTS,
         results=results,
         modes=MODES,
-        mode_fields=MODE_FIELDS[DEFAULTS["mode"]],
-        selected_mode=DEFAULTS["mode"],
+        mode_fields=MODE_FIELDS[mode],
+        selected_mode=mode,
         **_sim_template_defaults(),
     )
 

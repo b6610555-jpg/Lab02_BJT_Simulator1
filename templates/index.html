@@ -388,6 +388,29 @@
         <div class="sim-pane sim-pane-left">
           <h3 class="pane-title">Circuit &amp; Parameters</h3>
 
+          <div class="field circuit-mode-field">
+            <label for="s-mode">โหมดวงจร</label>
+            <div class="input-row">
+              <select id="s-mode" onchange="window.location='/?mode='+encodeURIComponent(this.value)">
+                {% for mode_id, mode_label in modes.items() %}
+                  <option value="{{ mode_id }}" {% if selected_mode == mode_id %}selected{% endif %}>
+                    {{ mode_label }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+            {% if selected_mode != "divider" %}
+              <p class="mode-note">
+                SPICE v1 รันจริงเฉพาะ <strong>Voltage Divider</strong> —
+                โหมด {{ modes[selected_mode] }} จะคำนวณ Analytical ด้านบน และแสดงวงจรที่เลือก
+              </p>
+            {% else %}
+              <p class="mode-note">
+                SPICE รันจริงสำหรับ CE Voltage Divider อ้างอิง (C<sub>IN</sub>, C<sub>OUT</sub>, R<sub>L</sub>)
+              </p>
+            {% endif %}
+          </div>
+
           <div class="circuit-box">
             <svg viewBox="0 0 470 294" class="circuit" xmlns="http://www.w3.org/2000/svg"
                  role="img" aria-labelledby="ce-circuit-title ce-circuit-desc">
