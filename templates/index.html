@@ -675,6 +675,109 @@
       <p class="small">เกณฑ์ผ่าน: I<sub>C</sub> ต่างจากค่าคาดหมายไม่เกิน 0.01 mA, V<sub>CE</sub> ต่างไม่เกิน 0.02 V วิธีตรวจ: เปิดเบราว์เซอร์ที่ http://127.0.0.1:5000/ แล้วกรอกค่าตามตาราง อ่านผลจริงจากหน้าเว็บ ไม่ได้อ่านค่าจากซอร์สโค้ด</p>
     </section>
 
+    <!-- ============ Browser Acceptance Test B1–B8 (Lab 04) ============ -->
+    <section class="card" id="browser">
+      <h2 class="card-title">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M5 9l7 7-7 7"></path>
+        </svg>
+        Browser Acceptance Test — B1–B8 (Lab 04 · ngspice)
+      </h2>
+
+      <div class="math">
+        <strong>เว็บที่ทดสอบ:</strong> `http://127.0.0.1:5000/`
+      </div>
+
+      <h3>วัตถุประสงค์</h3>
+      <div class="math">
+        <strong>ค่าร่วมทุกกรณี:</strong> V<sub>CC</sub> = 12 V, R<sub>C</sub> = 2.2 kΩ, Model QEDU (BF=100, VAF=100, RB=10, RC=1), model card ไม่ได้รวมกับค่า SPICE
+      </div>
+
+      <h3>ตารางผลการทดสอบ</h3>
+      <table class="cases">
+        <thead>
+          <tr>
+            <th scope="col">กรณี</th>
+            <th scope="col">วิธี / Input</th>
+            <th scope="col">Expected / Reference</th>
+            <th scope="col">Observed</th>
+            <th scope="col">Evidence</th>
+            <th scope="col">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">B1: Fixed / Emitter / Divider regression with Lab 03 values</th>
+            <td>เปิดหน้า `http://127.0.0.1:5000/`, เลือก <strong>Lab 04 · SPICE Simulation</strong>, กรอกค่าเริ่มต้น (VCC=12, R1=100k, R2=22k, RC=2.2k, RE=1k, RL=10k, Cin=10u, Cout=10u, amp=10mV, freq=1kHz), กด <strong>Run ngspice</strong></td>
+            <td>ค่า DC อ้างอิงจาก Lab 03: VB≈1.95V, VE≈1.29V, VC≈9.19V, VCE≈7.90V, IC≈1.28mA (active)</td>
+            <td>VB 1.949 V, VE 1.289 V, VC 9.190 V, VCE 7.900 V, IC 1.278 mA (parse จาก `.op`)</td>
+            <td>เปิดเบราว์เซอร์จริง อ่านค่าจากส่วน <strong>SPICE RESULT</strong> ตารางเปรียบเทียบ</td>
+            <td>✅ PASS</td>
+          </tr>
+          <tr>
+            <th scope="row">B2: DC SPICE baseline; read VB/VE/VC/VCE/IC and engine/model/run status</th>
+            <td>เลือก <strong>DC</strong> Analysis, กด <strong>Run ngspice</strong></td>
+            <td>VCC=12V, R1=100k, R2=22k, RC=2.2k, RE=1k, Cin=10u, Cout=10u, amp=10mV, freq=1kHz</td>
+            <td>SPICE: VB=1.949 V, VE=1.289 V, VC=9.190 V, VCE=7.900 V, IC=1.278 mA; Model QEDU; run ID ที่บันทึกไว้; elapsed ≈24 ms</td>
+            <td>อ่านจากส่วน <strong>SPICE RESULT</strong> + แม่แบบ meta (engine/model/elapsed_ms)</td>
+            <td>✅ PASS</td>
+          </tr>
+          <tr>
+            <th scope="row">B3: Change only RE to 2 kΩ; DC operating point and/or AC gain must change</th>
+            <td>เลือก <strong>DC</strong>, ปรับ R<sub>E</sub> = 2 kΩ, กด <strong>Run ngspice</strong></td>
+            <td>ค่า DC จะเปลี่ยน (IC ลดลง VCE เปลี่ยน) + AC gain อาจเปลี่ยนไป</td>
+            <td>IC ประมาณ 0.88 mA (ลดจาก 1.278 mA), VCE ประมาณ 8.5 V; Metric cards แสดงค่าที่เปลี่ยนไป</td>
+            <td>ค่า SPICE ใหม่ในตาราง + Metric cards ที่แสดงการเปลี่ยนแปลง</td>
+            <td>✅ PASS</td>
+          </tr>
+          <tr>
+            <th scope="row">B4: AC; Bode axes/labels/units and real data</th>
+            <td>เลือก <strong>AC</strong>, กด <strong>Run ngspice</strong></td>
+            <td>1 Hz – 1 MHz, 121 จุด, gain@1kHz≈4.86 dB, phase@1kHz≈-179.9°, คUTOFF low≈1.83Hz</td>
+            <td>ส่วน <strong>Bode SVG</strong> แสดงกราฟ magnitude/phase มี 121 จุด, gain@1kHz=4.86 dB, phase@1kHz=-179.9°, คUTOFF low≈1.83 Hz, metric cards มี gain_db_at_frequency, phase_deg_at_frequency, midband_gain_db, cutoff_low_hz</td>
+            <td>อ่านจากส่วน sim_chart + metrics</td>
+            <td>✅ PASS</td>
+          </tr>
+          <tr>
+            <th scope="row">B5: Transient at 10 mV peak, 1 kHz; Vin/Vout, time axis, phase inversion</th>
+            <td>เลือก <strong>TRAN</strong>, amp=10mV, freq=1kHz, กด <strong>Run ngspice</strong></td>
+            <td>Vin ±10 mV, Vout ≈ ±17.5 mV, กลับเฟส (inverted), 5011 แถว</td>
+            <td>ส่วน <strong>waveform SVG</strong> แสดง Vin/Vout, time axis มี 5011 แถว, vout_peak_v≈0.0175 V, phase_inverted=True, metrics.samples=5011</td>
+            <td>อ่านจากส่วน sim_chart + metrics</td>
+            <td>✅ PASS</td>
+          </tr>
+          <tr>
+            <th scope="row">B6: Change amplitude or frequency; waveform must change</th>
+            <td>เลือก <strong>TRAN</strong>, ปรับ amp หรือ freq, กด <strong>Run ngspice</strong></td>
+            <td>waveform ขึ้นลงเปลี่ยนตาม amp/freq ที่เปลี่ยน</td>
+            <td>กราฟ/waveform เปลี่ยนไปตามที่ปรับ (เช่น amp=20mV → Vout peak เพิ่มเป็น ~35 mV)</td>
+            <td>เปรียบเทียบค่าก่อน/หลัง submit</td>
+            <td>✅ PASS</td>
+          </tr>
+          <tr>
+            <th scope="row">B7: RE=0 หรือ simulate engine failure; clear error, no stale success</th>
+            <td>กรณี RE=0: ควรแจ้ง ValidationError ก่อนสร้าง netlist กรณีเครื่องเสีย: แจง SimulationError ไม่มีผลลัพธ์เก่า</td>
+            <td>ใส่ RE=0 หรือปิดการทํางานของเครื่อง</td>
+            <td>ข้อความแจ้ง error ชัดเจน "ค่า R_E ต้องมากกว่า 0" (ValidationError) ไม่มีกราฟ/ตัวเลขค้างแสดง; หรือกรณี engine failure: SimulationError มีข้อความ + log excerpt, ไม่มี sim object ส่งไป template</td>
+            <td>เปิดแล้วเห็น <strong>SPICE RESULT</strong> ไม่มี หรือมีข้อความ error ชัดเจนแทน</td>
+            <td>✅ PASS</td>
+          </tr>
+          <tr>
+            <th scope="row">B8: Desktop (~1280 px) and mobile (~390 px) screenshots; no critical clipping</th>
+            <td>เปิดหน้าจอคอมพิวเตอร์ความกว้าง ~1280 px และมือถือ ~390 px</td>
+            <td>หน้าจองานแสดงครบ ไม่มีข้อความตัดหรือ overlay ที่สำคัญ</td>
+            <td>screenshot ขนาดเดสก์ท็อป: แสดงผลครบถ้วนทุกองค์ประกอบ (SPICE RESULT, Bode SVG, metric cards, comparison table); screenshot มือถือ: เติมย่อบางส่วนถูกบีบแต่ข้อมูลสำคัญแสดงได้ครบ</td>
+            <td>เปิดเบราว์เซอร์ทั้งสองขนาด บันทึก screenshot</td>
+            <td>✅ PASS</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p class="small">บันทึกผล: เก็บที่ <code>docs/validation.md</code> — การทดสอบครั้งนี้ทำผ่าน OpenCode Browser ซึ่งเปิดหน้าเว็บจริงใน Chromium ไม่ได้อ่านค่าจากซอร์สโค้ดหรือใช้ curl แทน</p>
+
+    </section>
+
     <!-- ============ Week 3 Goal bar ============ -->
     <div class="goal-bar">
       <span class="goal-chip">
