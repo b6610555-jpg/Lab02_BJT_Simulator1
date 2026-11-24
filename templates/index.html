@@ -29,12 +29,23 @@
       </div>
     </header>
 
+    <nav aria-label="สารบัญหน้าเว็บ">
+      <a href="#outcomes">เป้าหมายและขอบเขต</a>
+      <a href="#screen">ภาพหน้าจอเป้าหมาย</a>
+      <a href="#architecture">สถาปัตยกรรม</a>
+      <a href="#simulation-flow">Simulation Flow</a>
+      <a href="#engineering">โมเดลวงจร</a>
+      <a href="#build">พัฒนาด้วย AI</a>
+      <a href="#browser">Browser Test B1–B8</a>
+      <a href="#submission">ส่งงาน</a>
+    </nav>
+
     {% if error %}
       <div class="alert error" role="alert">{{ error }}</div>
     {% endif %}
 
     <!-- ============ 3-column lab grid ============ -->
-    <div class="lab-grid">
+    <div class="lab-grid" id="input-params">
 
       <!-- ---------- 1. Input Parameters ---------- -->
       <section class="card">

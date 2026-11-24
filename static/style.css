@@ -1,10 +1,11 @@
 :root {
-  --navy: #123658;
-  --teal: #0c8078;
-  --teal-dk: #0a6a64;
-  --paper: #f2f6fa;
+  --navy: #103658;
+  --teal: #07766e;
+  --teal-dk: #06625b;
+  --orange: #a65a2c;
+  --paper: #f3f7fa;
   --ink: #17344b;
-  --muted: #5c7285;
+  --muted: #486275;
   --line: #d5e2ec;
   --card: #ffffff;
   --ok-bg: #e6f6ef;
@@ -13,7 +14,7 @@
   --warn-bg: #fff6e8;
   --warn-line: #f0d3a8;
   --warn-ink: #a2620f;
-  --shadow: 0 1px 3px rgba(18, 54, 88, .07);
+  --shadow: 0 1px 3px rgba(16, 54, 88, .08);
 }
 
 * { box-sizing: border-box; }
@@ -28,6 +29,7 @@ body {
 }
 
 .app { max-width: 1040px; margin: 0 auto; }
+.app { max-width: 1180px; margin: 0 auto; }
 
 /* ---------------- Header ---------------- */
 .app-header {
@@ -85,6 +87,35 @@ body {
   color: var(--teal);
 }
 
+/* ---------------- Nav menu ---------------- */
+nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  padding: 14px 0;
+}
+
+nav a {
+  padding: 5px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  text-decoration: none;
+  background: white;
+  font-size: .81rem;
+  font-weight: 500;
+  color: var(--navy);
+  transition: border-color .12s, box-shadow .12s;
+}
+
+nav a:hover {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 2px rgba(7, 118, 110, .12);
+}
+
+nav a:focus-visible {
+  outline: 2px solid var(--teal);
+}
+
 /* ---------------- Alerts ---------------- */
 .alert {
   padding: 10px 14px;
@@ -97,6 +128,46 @@ body {
   color: #a3121f;
   border: 1px solid #f3c4c0;
 }
+
+/* ---------------- Lab 04 improvements (per design doc) ---------------- */
+.hero {
+  background: var(--navy);
+  border-bottom: 5px solid #27ac9c;
+  color: #fff;
+  padding: 26px 0 24px;
+}
+
+.hero-meta {
+  font-size: .87rem;
+  color: #e6f4f6;
+}
+
+.banner-title {
+  background: #e7f3ef;
+  color: #13645c;
+  border: 1px solid #a7cfc2;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: .78rem;
+  font-weight: 700;
+  display: inline-block;
+  margin-bottom: 12px;
+}
+
+.hero h1 small {
+  display: block;
+  font-size: .49em;
+  font-weight: 500;
+  line-height: 1.7;
+}
+
+.sim-badges { gap: 8px; flex-wrap: wrap; }
+
+.badge {
+  transition: box-shadow .15s;
+}
+
+.badge:hover { box-shadow: 0 2px 8px rgba(0, 0, 0, .12); }
 
 /* ---------------- Grid ---------------- */
 .lab-grid {
