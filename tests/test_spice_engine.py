@@ -107,3 +107,27 @@ def test_parse_op_fixture():
 def test_parse_op_rejects_empty_log():
     with pytest.raises(se.ParseError):
         se.parse_op("")
+
+
+def test_parse_ac_fixture():
+    data = se.parse_ac((FIXTURES / "ac_baseline.log").read_text())
+    assert len(data["frequency_hz"]) == 121
+    assert data["frequency_hz"][0] == pytest.approx(1.0)
+    assert data["frequency_hz"][-1] == pytest.approx(1e6)
+    assert data["gain_db"][60] == pytest.approx(4.858954, abs=1e-4)
+    assert data["phase_deg"][60] == pytest.approx(-179.8686, abs=1e-3)
+
+
+def test_find_low_cutoff_and_no_high_cutoff():
+    data = se.parse_ac((FIXTURES / "ac_baseline.log").read_text())
+    assert se.find_cutoff(
+        data["frequency_hz"], data["gain_db"], "low"
+    ) == pytest.approx(1.82658, rel=1e-3)
+    assert se.find_cutoff(data["frequency_hz"], data["gain_db"], "high") is None
+
+
+def test_interpolate_at_uses_log_frequency():
+    data = se.parse_ac((FIXTURES / "ac_baseline.log").read_text())
+    assert se.interpolate_at(
+        data["frequency_hz"], data["gain_db"], 1000
+    ) == pytest.approx(4.858954, abs=1e-4)

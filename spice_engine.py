@@ -342,3 +342,179 @@ def parse_op(log: str) -> dict:
         "warnings": warnings,
         "source": "ngspice .op",
     }
+
+
+_AC_HEADER = re.compile(r"^\s*Index\s+frequency\s+(.+?)\s*$")
+_AC_ROW = re.compile(
+    r"^\s*(\d+)\s+([-+0-9.eE]+)((?:\s+[-+0-9.eE]+)*)\s*$"
+)
+
+
+def _parse_ac_tables(text: str) -> dict[int, dict]:
+    """Merge every AC print table (ngspice paginates them) by row index."""
+    series: dict[int, dict] = {}
+    columns = None
+    for line in text.splitlines():
+        header = _AC_HEADER.match(line)
+        if header:
+            columns = header.group(1).split()
+            continue
+        if columns is None:
+            continue
+        row = _AC_ROW.match(line)
+        if row:
+            index = int(row.group(1))
+            values = [float(value) for value in row.group(3).split()]
+            record = series.setdefault(index, {"frequency": float(row.group(2))})
+            for name, value in zip(columns, values):
+                record[name] = value
+        elif not line.strip():
+            columns = None
+    return series
+
+
+def _unwrap_degrees(phases) -> list[float]:
+    unwrapped: list[float] = []
+    for phase in phases:
+        value = phase
+        if unwrapped:
+            previous = unwrapped[-1]
+            while value - previous > 180.0:
+                value -= 360.0
+            while value - previous < -180.0:
+                value += 360.0
+        unwrapped.append(value)
+    return unwrapped
+
+
+def parse_ac(log: str) -> dict:
+    """Parse a real ngspice ``.ac`` log into Bode-ready arrays.
+
+    ngspice prints magnitude/phase in separate, page-broken tables and the
+    phase is in radians.  This returns sorted frequency, magnitude, gain in
+    dB, and unwrapped phase in degrees relative to ``vin``.
+    """
+    if not log or not log.strip():
+        raise ParseError("ngspice .ac output ว่าง ไม่มีข้อมูลให้ parse")
+
+    series = _parse_ac_tables(log)
+    if not series:
+        raise ParseError("ไม่พบ AC table ใน ngspice .ac output")
+
+    records = []
+    for index in sorted(series):
+        record = series[index]
+        missing = [
+            key
+            for key in ("frequency", "vm(out)", "vp(out)", "vm(vin)", "vp(vin)")
+            if key not in record
+        ]
+        if missing:
+            raise ParseError(
+                f"AC row {index} ไม่ครบ: ขาด {', '.join(missing)}"
+            )
+        if record["vm(vin)"] <= 0:
+            raise ParseError(f"AC row {index}: |V(vin)| ต้องมากกว่า 0")
+        records.append(record)
+
+    frequency_hz = [record["frequency"] for record in records]
+    vout_mag = [record["vm(out)"] for record in records]
+    vin_mag = [record["vm(vin)"] for record in records]
+    gain_db = [
+        20.0 * math.log10(out / vin)
+        for out, vin in zip(vout_mag, vin_mag)
+    ]
+    raw_phase = [
+        math.degrees(record["vp(out)"] - record["vp(vin)"])
+        for record in records
+    ]
+    phase_deg = _unwrap_degrees(raw_phase)
+
+    return {
+        "frequency_hz": frequency_hz,
+        "vout_mag": vout_mag,
+        "vin_mag": vin_mag,
+        "gain_db": gain_db,
+        "phase_deg": phase_deg,
+        "source": "ngspice .ac",
+    }
+
+
+def interpolate_at(freqs, values, target):
+    """Linearly interpolate ``values`` versus ``log10(frequency)``.
+
+    Returns ``None`` for an empty series or a target outside the sweep, and
+    the exact value when ``target`` matches a sample.
+    """
+    if not freqs or len(freqs) != len(values) or target is None:
+        return None
+    target = float(target)
+    if target <= 0 or target < freqs[0] or target > freqs[-1]:
+        return None
+    if target == freqs[0]:
+        return values[0]
+    for index in range(1, len(freqs)):
+        f1 = freqs[index]
+        if target == f1:
+            return values[index]
+        if f1 > target:
+            f0 = freqs[index - 1]
+            v0 = values[index - 1]
+            v1 = values[index]
+            t = (math.log10(target) - math.log10(f0)) / (
+                math.log10(f1) - math.log10(f0)
+            )
+            return v0 + t * (v1 - v0)
+    return None
+
+
+def find_cutoff(freqs, gain_db, side: str):
+    """Find the first -3 dB crossing relative to the midband gain.
+
+    ``side="low"`` looks for the first rising crossing; ``side="high"`` the
+    first falling crossing.  Returns ``None`` when no crossing exists in the
+    sweep.
+    """
+    if not freqs or len(freqs) != len(gain_db) or len(freqs) < 2:
+        return None
+    target = max(gain_db) - 3.0
+    for index in range(1, len(gain_db)):
+        previous = gain_db[index - 1]
+        current = gain_db[index]
+        crossed = (
+            previous < target <= current
+            if side == "low"
+            else previous >= target > current
+        )
+        if crossed:
+            f0, f1 = freqs[index - 1], freqs[index]
+            g0, g1 = previous, current
+            t = (target - g0) / (g1 - g0)
+            return 10.0 ** (
+                math.log10(f0) + t * (math.log10(f1) - math.log10(f0))
+            )
+    return None
+
+
+def ac_metrics(data: dict, frequency_hz: float) -> dict:
+    """Summarize parsed AC data at the user's frequency plus cutoffs."""
+    freqs = data.get("frequency_hz", [])
+    gains = data.get("gain_db", [])
+    phases = data.get("phase_deg", [])
+
+    gain_at = interpolate_at(freqs, gains, frequency_hz)
+    phase_at = interpolate_at(freqs, phases, frequency_hz)
+    gain_vv = 10.0 ** (gain_at / 20.0) if gain_at is not None else None
+
+    return {
+        "gain_db_at_frequency": gain_at,
+        "gain_vv_at_frequency": gain_vv,
+        "phase_deg_at_frequency": phase_at,
+        "midband_gain_db": max(gains) if gains else None,
+        "cutoff_low_hz": find_cutoff(freqs, gains, "low"),
+        "cutoff_high_hz": find_cutoff(freqs, gains, "high"),
+        "sweep_hz": {
+            "min": freqs[0] if freqs else None,
+            "max": freqs[-1] if freqs else None,
+        },
+    }
