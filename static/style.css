@@ -23,13 +23,15 @@ body {
   background: var(--paper);
   color: var(--ink);
   margin: 0;
-  padding: 20px 16px 40px;
-  font: 14px/1.55 Tahoma, "Noto Sans Thai", "Leelawadee UI", Arial, sans-serif;
+  font-family: "Noto Sans Thai", Tahoma, "Leelawadee UI", Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.7;
   -webkit-font-smoothing: antialiased;
 }
 
-.app { max-width: 1040px; margin: 0 auto; }
-.app { max-width: 1180px; margin: 0 auto; }
+.app { max-width: 1180px; margin: 0 auto; padding: 0 26px; }
+
+.shell { max-width: 1180px; margin: 0 auto; padding: 0 26px; }
 
 /* ---------------- Header ---------------- */
 .app-header {
@@ -129,36 +131,50 @@ nav a:focus-visible {
   border: 1px solid #f3c4c0;
 }
 
-/* ---------------- Lab 04 improvements (per design doc) ---------------- */
+/* ---------------- Hero (per Lab 04 design) ---------------- */
 .hero {
   background: var(--navy);
   border-bottom: 5px solid #27ac9c;
   color: #fff;
-  padding: 26px 0 24px;
+  padding: 34px 0 30px;
 }
 
-.hero-meta {
-  font-size: .87rem;
-  color: #e6f4f6;
+.hero .overline {
+  font-weight: 750;
+  font-size: .81rem;
+  letter-spacing: .09em;
+  color: #b6e6e0;
+  margin: 0;
 }
 
-.banner-title {
-  background: #e7f3ef;
-  color: #13645c;
-  border: 1px solid #a7cfc2;
-  padding: 6px 14px;
-  border-radius: 6px;
-  font-size: .78rem;
-  font-weight: 700;
-  display: inline-block;
-  margin-bottom: 12px;
+.hero h1 {
+  font-size: clamp(1.75rem, 3.6vw, 2.6rem);
+  letter-spacing: -.025em;
+  line-height: 1.2;
+  margin: 9px 0 12px;
+  color: #fff;
 }
 
 .hero h1 small {
   display: block;
   font-size: .49em;
+  letter-spacing: 0;
   font-weight: 500;
-  line-height: 1.7;
+  line-height: 1.6;
+  margin-top: 6px;
+  color: #cde9e6;
+}
+
+.hero p { max-width: 870px; margin: 8px 0; }
+.hero-meta { font-size: .87rem; color: #e6f4f6; }
+.hero-meta b { color: #fff; }
+
+.kicker {
+  color: var(--teal);
+  font-size: .78rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+  margin: 0 0 6px;
 }
 
 .sim-badges { gap: 8px; flex-wrap: wrap; }
@@ -600,12 +616,66 @@ button:hover { background: var(--teal-dk); }
   flex-wrap: wrap;
 }
 
-.sim-result-grid {
+/* ---- 3-column simulator workspace (design wireframe) ---- */
+.sim-workspace {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  grid-template-columns: 1.02fr 1.18fr .95fr;
+  gap: 14px;
   align-items: start;
 }
+
+.sim-pane {
+  background: #f7fafc;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  min-width: 0;
+}
+
+.pane-title {
+  margin: 0 0 10px;
+  font-size: .95rem;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.sim-pane-left .sim-form {
+  padding: 0;
+  background: transparent;
+  border: none;
+}
+
+.sim-pane-left .sim-form-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.sim-pane-left .sim-actions { margin-top: 10px; }
+.sim-pane-center .chart { margin-top: 0; }
+.sim-pane-right .sim-meta { display: block; margin-bottom: 10px; }
+
+.swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  margin-right: 5px;
+  vertical-align: -1px;
+}
+.swatch.teal { background: #0c8e83; }
+.swatch.orange { background: #c77a35; }
+
+.engine-card {
+  margin-top: 14px;
+  padding: 10px 12px;
+  background: var(--teal-light);
+  border: 1px solid #a7cfc2;
+  border-radius: 6px;
+  color: #13645c;
+  font-size: .78rem;
+}
+.engine-card strong { display: block; color: #13645c; }
+.engine-card span { color: var(--muted); }
 
 .metric-grid {
   display: grid;
@@ -723,14 +793,21 @@ button:hover { background: var(--teal-dk); }
 }
 
 /* ---------------- Responsive ---------------- */
+@media (max-width: 1100px) {
+  .sim-workspace { grid-template-columns: 1fr 1fr; }
+  .sim-pane-right { grid-column: 1 / -1; }
+}
+
 @media (max-width: 900px) {
+  .app, .shell { padding: 0 14px; }
   .lab-grid { grid-template-columns: 1fr; }
   .card-title { white-space: normal; }
   .app-header { flex-direction: column; align-items: flex-start; }
   .goal-bar { flex-direction: column; align-items: flex-start; }
   .sim-head { flex-direction: column; }
   .sim-form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .sim-result-grid { grid-template-columns: 1fr; }
+  .sim-workspace { grid-template-columns: 1fr; }
+  .sim-pane-right { grid-column: auto; }
   .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   nav { padding: 8px 0; gap: 4px; }
 }

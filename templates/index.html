@@ -3,31 +3,23 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Lab 03: BJT DC Bias Web App</title>
+  <title>ENG29 2121 · Lab 04 — BJT Amplifier Simulator v1</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-  <div class="app">
+  <!-- ============ Hero (Lab 04 design) ============ -->
+  <header class="hero">
+    <div class="app">
+      <p class="overline">ENG29 2121 · COMPUTER PROGRAMMING FOR ELECTRICAL ENGINEERS</p>
+      <h1>Lab 04 · BJT Amplifier Simulator v1
+        <small>Integrate ngspice · Visualize DC / AC / Transient · Polish &amp; Verify UI</small>
+      </h1>
+      <p>ต่อยอด Flask Web App จาก Lab 3 ให้เป็นโปรแกรมจำลอง <strong>Common-Emitter Transistor Amplifier</strong> รุ่นแรกที่แสดง DC operating point, AC frequency response และสัญญาณตามเวลา พร้อมตรวจผลผ่านเบราว์เซอร์จริง</p>
+      <p class="hero-meta">ภาคเรียน 2/2569 · วิศวกรรมไฟฟ้าปีที่ 2 · <b>Lab 180 นาที</b> · OpenCode + Superpowers + ngspice</p>
+    </div>
+  </header>
 
-    <!-- ============ Header ============ -->
-    <header class="app-header">
-      <div class="brand">
-        <div class="chip-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
-            <rect x="7" y="7" width="10" height="10" rx="1.5"></rect>
-            <path d="M10 2v3M14 2v3M10 19v3M14 19v3M2 10h3M2 14h3M19 10h3M19 14h3"></path>
-          </svg>
-        </div>
-        <div class="brand-text">
-          <h1>Lab 04: BJT Amplifier Simulator</h1>
-          <p>ENG29 2121 — DC Bias (Lab 03) + ngspice DC / AC / Transient (Lab 04)</p>
-        </div>
-      </div>
-      <div class="course-badge">
-        <span class="angle">&lt;/&gt;</span>
-        <span>Computer Programming for<br>Electrical Engineers</span>
-      </div>
-    </header>
+  <div class="app">
 
     <nav aria-label="สารบัญหน้าเว็บ">
       <a href="#outcomes">เป้าหมายและขอบเขต</a>
@@ -362,8 +354,9 @@
       </section>
     </div>
 
-    <!-- ============ Lab 04 · SPICE Simulation ============ -->
-    <section class="card sim-card">
+    <!-- ============ Lab 04 · SPICE Simulation (3-column workspace) ============ -->
+    <section class="card sim-card" id="build">
+      <p class="kicker">04 / LIVE ngspice</p>
       <div class="sim-head">
         <h2 class="card-title">
           <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
@@ -390,211 +383,286 @@
         </div>
       {% endif %}
 
-      <form method="post" action="/simulate" class="sim-form">
-        <div class="sim-form-grid">
-          <div class="field">
-            <label for="s-vcc">V<sub>CC</sub> (Supply)</label>
-            <div class="input-row">
-              <input id="s-vcc" type="text" name="s_vcc"
-                     value="{{ sim_values.get('s_vcc', '12.0') }}">
-              <span class="unit-chip">V</span>
-            </div>
-          </div>
+      <div class="sim-workspace">
+        <!-- ---------- LEFT: Circuit & Parameters ---------- -->
+        <div class="sim-pane sim-pane-left">
+          <h3 class="pane-title">Circuit &amp; Parameters</h3>
 
-          {% for field, label, default in [
-            ("s_r1", "R<sub>1</sub> (Upper Divider)", "100"),
-            ("s_r2", "R<sub>2</sub> (Lower Divider)", "22"),
-            ("s_rc", "R<sub>C</sub> (Collector)", "2.2"),
-            ("s_re", "R<sub>E</sub> (Emitter)", "1.0"),
-            ("s_rl", "R<sub>L</sub> (Load)", "10")
-          ] %}
-            <div class="field">
-              <label for="{{ field }}">{{ label|safe }}</label>
-              <div class="input-row">
-                <input id="{{ field }}" type="text" name="{{ field }}"
-                       value="{{ sim_values.get(field, default) }}">
-                <select name="{{ field }}_unit" class="unit-select">
-                  <option value="k" {% if sim_values.get(field ~ '_unit', 'k') == 'k' %}selected{% endif %}>kΩ</option>
-                  <option value="M" {% if sim_values.get(field ~ '_unit', 'k') == 'M' %}selected{% endif %}>MΩ</option>
-                </select>
-              </div>
-            </div>
-          {% endfor %}
-
-          {% for field, label, default in [
-            ("s_cin", "C<sub>IN</sub> (Input Coupling)", "10"),
-            ("s_cout", "C<sub>OUT</sub> (Output Coupling)", "10")
-          ] %}
-            <div class="field">
-              <label for="{{ field }}">{{ label|safe }}</label>
-              <div class="input-row">
-                <input id="{{ field }}" type="text" name="{{ field }}"
-                       value="{{ sim_values.get(field, default) }}">
-                <select name="{{ field }}_unit" class="unit-select">
-                  <option value="u" {% if sim_values.get(field ~ '_unit', 'u') == 'u' %}selected{% endif %}>µF</option>
-                  <option value="n" {% if sim_values.get(field ~ '_unit', 'u') == 'n' %}selected{% endif %}>nF</option>
-                </select>
-              </div>
-            </div>
-          {% endfor %}
-
-          <div class="field">
-            <label for="s-amp">Source amplitude (peak)</label>
-            <div class="input-row">
-              <input id="s-amp" type="text" name="s_amp"
-                     value="{{ sim_values.get('s_amp', '10') }}">
-              <select name="s_amp_unit" class="unit-select">
-                <option value="m" {% if sim_values.get('s_amp_unit', 'm') == 'm' %}selected{% endif %}>mV</option>
-                <option value="V" {% if sim_values.get('s_amp_unit', 'm') == 'V' %}selected{% endif %}>V</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="field">
-            <label for="s-freq">Source frequency</label>
-            <div class="input-row">
-              <input id="s-freq" type="text" name="s_freq"
-                     value="{{ sim_values.get('s_freq', '1.0') }}">
-              <select name="s_freq_unit" class="unit-select">
-                <option value="kHz" {% if sim_values.get('s_freq_unit', 'kHz') == 'kHz' %}selected{% endif %}>kHz</option>
-                <option value="Hz" {% if sim_values.get('s_freq_unit', 'kHz') == 'Hz' %}selected{% endif %}>Hz</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div class="sim-actions">
-          <div class="field sim-analysis-field">
-            <label for="s-analysis">Analysis</label>
-            <select id="s-analysis" name="analysis">
-              {% for value, label in [
-                ("dc", "DC operating point (.op)"),
-                ("ac", "AC sweep 1 Hz – 1 MHz (.ac)"),
-                ("tran", "Transient 5 cycles (.tran)")
-              ] %}
-                <option value="{{ value }}" {% if sim_values.get('analysis', 'dc') == value %}selected{% endif %}>{{ label }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <button type="submit">
-            <svg class="ico-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M8 5v14l11-7z"></path>
+          <div class="circuit-box">
+            <svg viewBox="0 0 470 294" class="circuit" xmlns="http://www.w3.org/2000/svg"
+                 role="img" aria-labelledby="ce-circuit-title ce-circuit-desc">
+              <title id="ce-circuit-title">Common-emitter amplifier with voltage-divider bias</title>
+              <desc id="ce-circuit-desc">VCC ต่อ R1 และ RC, R1/R2 แบ่งแรงดันเข้าฐาน, RC ต่อขั้วคอลเลกเตอร์, RE ต่ออีมิเตอร์ลงกราวด์, Vin ผ่าน Cin เข้าฐาน และ Vout ผ่าน Cout ไป RL</desc>
+              <g fill="none" stroke="#3b6377" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M151 28H310 M151 28V64 M151 108V180 M310 28V64 M310 108V145"></path>
+                <rect x="144" y="64" width="14" height="44" fill="#fff"></rect>
+                <rect x="303" y="64" width="14" height="44" fill="#fff"></rect>
+                <circle cx="278" cy="183" r="41" fill="#fff"></circle>
+                <path d="M151 180H260 M260 164V202 M260 172L299 145H310 M260 195L300 220H310V236"></path>
+                <path d="M282 207L300 220 M292 217L296 208L302 222Z" fill="#3b6377" stroke-width="1.4"></path>
+                <rect x="303" y="236" width="14" height="23" fill="#fff"></rect>
+                <path d="M310 259V278"></path>
+                <path d="M151 180V207"></path>
+                <rect x="144" y="207" width="14" height="37" fill="#fff"></rect>
+                <path d="M151 244V278"></path>
+                <path d="M43 180H82 M93 180H151 M43 180V207 M43 237V278"></path>
+                <path d="M82 165V195 M93 165V195"></path>
+                <circle cx="43" cy="222" r="15" fill="#fff"></circle>
+                <path d="M33 223Q38 216 43 223T53 223" stroke-width="1.6"></path>
+                <path d="M310 145H360 M371 145H414V190"></path>
+                <path d="M360 130V160 M371 130V160"></path>
+                <rect x="407" y="190" width="14" height="51" fill="#fff"></rect>
+                <path d="M414 241V278"></path>
+                <path d="M43 278H414 M222 278V285 M211 285H233 M215 290H229" stroke-width="2"></path>
+              </g>
+              <g fill="#254d67" font-family="Tahoma,Arial,sans-serif">
+                <text x="231" y="17" text-anchor="middle" font-size="16" font-weight="700">+VCC {{ sim_values.get('s_vcc', '12.0') }} V</text>
+                <text x="164" y="91" font-size="15">R1</text>
+                <text x="323" y="91" font-size="15">RC</text>
+                <text x="164" y="230" font-size="15">R2</text>
+                <text x="323" y="253" font-size="15">RE</text>
+                <text x="242" y="246" font-size="16" font-weight="700">Q1 NPN</text>
+                <text x="81" y="155" font-size="14" text-anchor="middle">Cin</text>
+                <text x="353" y="119" font-size="14" text-anchor="middle">Cout</text>
+                <text x="426" y="216" font-size="15">RL</text>
+                <text x="414" y="131" font-size="15">Vout</text>
+                <text x="8" y="245" font-size="14">Vin</text>
+                <text x="223" y="270" font-size="13">GND</text>
+              </g>
+              <g fill="#07766e"><circle cx="151" cy="180" r="4"></circle><circle cx="310" cy="145" r="4"></circle></g>
             </svg>
-            Run ngspice
-          </button>
+          </div>
+          <p class="circuit-caption">CE Voltage Divider (NPN, ไม่ bypass R<sub>E</sub>) — ภาพประกอบวงจร</p>
+
+          <form method="post" action="/simulate" class="sim-form">
+            <div class="sim-form-grid">
+              <div class="field">
+                <label for="s-vcc">V<sub>CC</sub> (Supply)</label>
+                <div class="input-row">
+                  <input id="s-vcc" type="text" name="s_vcc"
+                         value="{{ sim_values.get('s_vcc', '12.0') }}">
+                  <span class="unit-chip">V</span>
+                </div>
+              </div>
+
+              {% for field, label, default in [
+                ("s_r1", "R<sub>1</sub> (Upper Divider)", "100"),
+                ("s_r2", "R<sub>2</sub> (Lower Divider)", "22"),
+                ("s_rc", "R<sub>C</sub> (Collector)", "2.2"),
+                ("s_re", "R<sub>E</sub> (Emitter)", "1.0"),
+                ("s_rl", "R<sub>L</sub> (Load)", "10")
+              ] %}
+                <div class="field">
+                  <label for="{{ field }}">{{ label|safe }}</label>
+                  <div class="input-row">
+                    <input id="{{ field }}" type="text" name="{{ field }}"
+                           value="{{ sim_values.get(field, default) }}">
+                    <select name="{{ field }}_unit" class="unit-select">
+                      <option value="k" {% if sim_values.get(field ~ '_unit', 'k') == 'k' %}selected{% endif %}>kΩ</option>
+                      <option value="M" {% if sim_values.get(field ~ '_unit', 'k') == 'M' %}selected{% endif %}>MΩ</option>
+                    </select>
+                  </div>
+                </div>
+              {% endfor %}
+
+              {% for field, label, default in [
+                ("s_cin", "C<sub>IN</sub> (Input Coupling)", "10"),
+                ("s_cout", "C<sub>OUT</sub> (Output Coupling)", "10")
+              ] %}
+                <div class="field">
+                  <label for="{{ field }}">{{ label|safe }}</label>
+                  <div class="input-row">
+                    <input id="{{ field }}" type="text" name="{{ field }}"
+                           value="{{ sim_values.get(field, default) }}">
+                    <select name="{{ field }}_unit" class="unit-select">
+                      <option value="u" {% if sim_values.get(field ~ '_unit', 'u') == 'u' %}selected{% endif %}>µF</option>
+                      <option value="n" {% if sim_values.get(field ~ '_unit', 'u') == 'n' %}selected{% endif %}>nF</option>
+                    </select>
+                  </div>
+                </div>
+              {% endfor %}
+
+              <div class="field">
+                <label for="s-amp">Source amplitude (peak)</label>
+                <div class="input-row">
+                  <input id="s-amp" type="text" name="s_amp"
+                         value="{{ sim_values.get('s_amp', '10') }}">
+                  <select name="s_amp_unit" class="unit-select">
+                    <option value="m" {% if sim_values.get('s_amp_unit', 'm') == 'm' %}selected{% endif %}>mV</option>
+                    <option value="V" {% if sim_values.get('s_amp_unit', 'm') == 'V' %}selected{% endif %}>V</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="field">
+                <label for="s-freq">Source frequency</label>
+                <div class="input-row">
+                  <input id="s-freq" type="text" name="s_freq"
+                         value="{{ sim_values.get('s_freq', '1.0') }}">
+                  <select name="s_freq_unit" class="unit-select">
+                    <option value="kHz" {% if sim_values.get('s_freq_unit', 'kHz') == 'kHz' %}selected{% endif %}>kHz</option>
+                    <option value="Hz" {% if sim_values.get('s_freq_unit', 'kHz') == 'Hz' %}selected{% endif %}>Hz</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="sim-actions">
+              <div class="field sim-analysis-field">
+                <label for="s-analysis">Analysis</label>
+                <select id="s-analysis" name="analysis">
+                  {% for value, label in [
+                    ("dc", "DC operating point (.op)"),
+                    ("ac", "AC sweep 1 Hz – 1 MHz (.ac)"),
+                    ("tran", "Transient 5 cycles (.tran)")
+                  ] %}
+                    <option value="{{ value }}" {% if sim_values.get('analysis', 'dc') == value %}selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <button type="submit">
+                <svg class="ico-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M8 5v14l11-7z"></path>
+                </svg>
+                Run ngspice
+              </button>
+            </div>
+          </form>
         </div>
-      </form>
 
-      {% if not sim %}
-        <p class="sim-placeholder">
-          เลือก analysis แล้วกด <strong>Run ngspice</strong> เพื่อรัน ngspice จริงบนเครื่องนี้
-          — ค่าที่แสดงจะเป็น SPICE output ที่ parse แล้ว ไม่ใช่ค่าประมาณ
-        </p>
-        {% if sim_chart %}
+        <!-- ---------- CENTER: Simulation & Plots ---------- -->
+        <div class="sim-pane sim-pane-center">
+          <h3 class="pane-title">Simulation &amp; Plots</h3>
+
+          {% if not sim %}
+            <p class="sim-placeholder">
+              เลือก analysis แล้วกด <strong>Run ngspice</strong> เพื่อรัน ngspice จริงบนเครื่องนี้
+              — กราฟที่แสดงจะมาจาก output ที่ parse แล้ว ไม่ใช่ค่าประมาณ
+            </p>
+          {% endif %}
+
           <div class="chart">{{ sim_chart|safe }}</div>
-        {% endif %}
-      {% endif %}
 
-      {% if sim %}
-        <div class="sim-result">
-          <div class="sim-result-head">
-            <span class="badge badge-spice">SPICE RESULT</span>
-            <span class="sim-meta">
+          {% if sim and sim.analysis == "tran" %}
+            <div class="chart-legend">
+              <span><i class="swatch teal"></i>Vin (.teal)</span>
+              <span><i class="swatch orange"></i>Vout (orange) · กลับเฟส</span>
+            </div>
+          {% elif sim and sim.analysis == "ac" %}
+            <div class="chart-legend">
+              <span><i class="swatch teal"></i>Gain (dB)</span>
+              <span><i class="swatch orange"></i>Phase (deg)</span>
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- ---------- RIGHT: Engineering Results ---------- -->
+        <div class="sim-pane sim-pane-right">
+          <h3 class="pane-title">Engineering Results</h3>
+
+          {% if sim %}
+            <div class="sim-result-head">
+              <span class="badge badge-spice">SPICE RESULT</span>
+            </div>
+            <p class="sim-meta">
               {{ sim.analysis_label }} · {{ sim.engine }} · model {{ sim.model }}
               · run <code>{{ sim.run_id }}</code> · {{ sim.elapsed_ms }} ms
-            </span>
-          </div>
+            </p>
 
-          {% if sim.analysis == "dc" %}
-            <div class="sim-result-grid">
-              <div>
-                <h3 class="sim-subtitle">SPICE · ngspice .op values</h3>
-                <table class="results-table">
+            {% if sim.analysis == "dc" %}
+              <h4 class="sim-subtitle">DC Operating Point — ngspice .op</h4>
+              <table class="results-table">
+                <tbody>
+                  {% for symbol, value in sim.dc_rows %}
+                    <tr>
+                      <td class="sym">{{ symbol|safe }}</td>
+                      <td class="val">{{ value }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+              <p class="sim-note">Operating region (จาก SPICE node/current): <strong>{{ sim.dc_region }}</strong></p>
+
+              {% if sim_ref %}
+                <h4 class="sim-subtitle">
+                  <span class="badge badge-analytical">ANALYTICAL REFERENCE</span>
+                  Lab 03 ideal-divider model
+                </h4>
+                <table class="compare-table">
+                  <thead>
+                    <tr>
+                      <th scope="col">Quantity</th>
+                      <th scope="col"><span class="badge badge-spice">SPICE</span></th>
+                      <th scope="col">Analytical</th>
+                      <th scope="col">Δ</th>
+                      <th scope="col">Δ%</th>
+                    </tr>
+                  </thead>
                   <tbody>
-                    {% for symbol, value in sim.dc_rows %}
+                    {% for row in sim_ref %}
                       <tr>
-                        <td class="sym">{{ symbol|safe }}</td>
-                        <td class="val">{{ value }}</td>
+                        <td class="sym">{{ row.symbol|safe }}</td>
+                        <td>{{ row.spice }}</td>
+                        <td>{{ row.analytical }}</td>
+                        <td>{{ row.delta }}</td>
+                        <td>{{ row.delta_pct }}</td>
                       </tr>
                     {% endfor %}
                   </tbody>
                 </table>
-                <p class="sim-note">Operating region (จาก SPICE node/current): <strong>{{ sim.dc_region }}</strong></p>
-              </div>
-
-              {% if sim_ref %}
-                <div>
-                  <h3 class="sim-subtitle">
-                    <span class="badge badge-analytical">ANALYTICAL REFERENCE</span>
-                    Lab 03 ideal-divider model
-                  </h3>
-                  <table class="compare-table">
-                    <thead>
-                      <tr>
-                        <th scope="col">Quantity</th>
-                        <th scope="col"><span class="badge badge-spice">SPICE</span></th>
-                        <th scope="col">Analytical</th>
-                        <th scope="col">Δ</th>
-                        <th scope="col">Δ%</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {% for row in sim_ref %}
-                        <tr>
-                          <td class="sym">{{ row.symbol|safe }}</td>
-                          <td>{{ row.spice }}</td>
-                          <td>{{ row.analytical }}</td>
-                          <td>{{ row.delta }}</td>
-                          <td>{{ row.delta_pct }}</td>
-                        </tr>
-                      {% endfor %}
-                    </tbody>
-                  </table>
-                  <p class="sim-note">
-                    Analytical = <code>bias.calculate_bias</code> (β=100, V<sub>BE</sub>=0.70 V)
-                    — ไม่ใช่ค่าจาก ngspice และไม่ถูกนำไปรวมกับค่า SPICE
-                  </p>
-                </div>
+                <p class="sim-note">
+                  Analytical = <code>bias.calculate_bias</code> (β=100, V<sub>BE</sub>=0.70 V)
+                  — ไม่ใช่ค่าจาก ngspice และไม่ถูกนำไปรวมกับค่า SPICE
+                </p>
               {% endif %}
-            </div>
+            {% else %}
+              <h4 class="sim-subtitle">{{ sim.analysis_label }} — metrics</h4>
+              <div class="metric-grid">
+                {% for metric in sim.metrics_rows %}
+                  <div class="metric">
+                    <span class="label">{{ metric.label }}</span>
+                    <span class="value">{{ metric.value }}</span>
+                  </div>
+                {% endfor %}
+              </div>
+            {% endif %}
+
+            {% if sim.warnings %}
+              <ul class="warnings">
+                {% for warning in sim.warnings %}
+                  <li>{{ warning }}</li>
+                {% endfor %}
+              </ul>
+            {% endif %}
+
+            <p class="sim-note">
+              <strong>Provenance:</strong>
+              engine <code>{{ sim.engine }}</code> ·
+              model <code>{{ sim.model }}</code> ·
+              model card <code>{{ sim.model_card }}</code> ·
+              run dir <code>{{ sim.run_dir }}</code>
+            </p>
+
+            <details class="data-details">
+              <summary>Netlist used by ngspice</summary>
+              <pre>{{ sim.netlist }}</pre>
+            </details>
+            <details class="data-details">
+              <summary>ngspice log excerpt (tail, max 4,000 chars)</summary>
+              <pre>{{ sim.log_excerpt }}</pre>
+            </details>
           {% else %}
-            <div class="metric-grid">
-              {% for metric in sim.metrics_rows %}
-                <div class="metric">
-                  <span class="label">{{ metric.label }}</span>
-                  <span class="value">{{ metric.value }}</span>
-                </div>
-              {% endfor %}
+            <p class="sim-placeholder">
+              หลังรัน ngspice ตัวเลข DC / AC / Transient และ provenance จะแสดงที่นี่
+              แยกจากค่าประมาณ Analytical อย่างชัดเจน
+            </p>
+            <div class="engine-card">
+              <strong>Engine: ngspice</strong>
+              <span>Run status · model · units</span>
             </div>
-            <div class="chart">{{ sim_chart|safe }}</div>
           {% endif %}
-
-          {% if sim.warnings %}
-            <ul class="warnings">
-              {% for warning in sim.warnings %}
-                <li>{{ warning }}</li>
-              {% endfor %}
-            </ul>
-          {% endif %}
-
-          <p class="sim-note">
-            <strong>Provenance:</strong>
-            engine <code>{{ sim.engine }}</code> ·
-            model <code>{{ sim.model }}</code> ·
-            model card <code>{{ sim.model_card }}</code> ·
-            run dir <code>{{ sim.run_dir }}</code>
-          </p>
-
-          <details class="data-details">
-            <summary>Netlist used by ngspice</summary>
-            <pre>{{ sim.netlist }}</pre>
-          </details>
-          <details class="data-details">
-            <summary>ngspice log excerpt (tail, max 4,000 chars)</summary>
-            <pre>{{ sim.log_excerpt }}</pre>
-          </details>
         </div>
-      {% endif %}
+      </div>
     </section>
 
     <!-- ============ Browser Acceptance Test A1–A5 ============ -->
@@ -712,7 +780,7 @@
             <td>เปิดหน้า `http://127.0.0.1:5000/`, เลือก <strong>Lab 04 · SPICE Simulation</strong>, กรอกค่าเริ่มต้น (VCC=12, R1=100k, R2=22k, RC=2.2k, RE=1k, RL=10k, Cin=10u, Cout=10u, amp=10mV, freq=1kHz), กด <strong>Run ngspice</strong></td>
             <td>ค่า DC อ้างอิงจาก Lab 03: VB≈1.95V, VE≈1.29V, VC≈9.19V, VCE≈7.90V, IC≈1.28mA (active)</td>
             <td>VB 1.949 V, VE 1.289 V, VC 9.190 V, VCE 7.900 V, IC 1.278 mA (parse จาก `.op`)</td>
-            <td>เปิดเบราว์เซอร์จริง อ่านค่าจากส่วน <strong>SPICE RESULT</strong> ตารางเปรียบเทียบ</td>
+            <td>เปิดเบราว์เซอร์จริง อ่านค่าจากส่วน <strong>ผลลัพธ์ SPICE</strong> ตารางเปรียบเทียบ</td>
             <td>✅ PASS</td>
           </tr>
           <tr>
@@ -720,7 +788,7 @@
             <td>เลือก <strong>DC</strong> Analysis, กด <strong>Run ngspice</strong></td>
             <td>VCC=12V, R1=100k, R2=22k, RC=2.2k, RE=1k, Cin=10u, Cout=10u, amp=10mV, freq=1kHz</td>
             <td>SPICE: VB=1.949 V, VE=1.289 V, VC=9.190 V, VCE=7.900 V, IC=1.278 mA; Model QEDU; run ID ที่บันทึกไว้; elapsed ≈24 ms</td>
-            <td>อ่านจากส่วน <strong>SPICE RESULT</strong> + แม่แบบ meta (engine/model/elapsed_ms)</td>
+            <td>อ่านจากส่วน <strong>ผลลัพธ์ SPICE</strong> + แม่แบบ meta (engine/model/elapsed_ms)</td>
             <td>✅ PASS</td>
           </tr>
           <tr>
@@ -760,14 +828,14 @@
             <td>กรณี RE=0: ควรแจ้ง ValidationError ก่อนสร้าง netlist กรณีเครื่องเสีย: แจง SimulationError ไม่มีผลลัพธ์เก่า</td>
             <td>ใส่ RE=0 หรือปิดการทํางานของเครื่อง</td>
             <td>ข้อความแจ้ง error ชัดเจน "ค่า R_E ต้องมากกว่า 0" (ValidationError) ไม่มีกราฟ/ตัวเลขค้างแสดง; หรือกรณี engine failure: SimulationError มีข้อความ + log excerpt, ไม่มี sim object ส่งไป template</td>
-            <td>เปิดแล้วเห็น <strong>SPICE RESULT</strong> ไม่มี หรือมีข้อความ error ชัดเจนแทน</td>
+            <td>เปิดแล้วเห็น <strong>ผลลัพธ์ SPICE</strong> ไม่มี หรือมีข้อความ error ชัดเจนแทน</td>
             <td>✅ PASS</td>
           </tr>
           <tr>
             <th scope="row">B8: Desktop (~1280 px) and mobile (~390 px) screenshots; no critical clipping</th>
             <td>เปิดหน้าจอคอมพิวเตอร์ความกว้าง ~1280 px และมือถือ ~390 px</td>
             <td>หน้าจองานแสดงครบ ไม่มีข้อความตัดหรือ overlay ที่สำคัญ</td>
-            <td>screenshot ขนาดเดสก์ท็อป: แสดงผลครบถ้วนทุกองค์ประกอบ (SPICE RESULT, Bode SVG, metric cards, comparison table); screenshot มือถือ: เติมย่อบางส่วนถูกบีบแต่ข้อมูลสำคัญแสดงได้ครบ</td>
+            <td>screenshot ขนาดเดสก์ท็อป: แสดงผลครบถ้วนทุกองค์ประกอบ (ผลลัพธ์ SPICE, Bode SVG, metric cards, comparison table); screenshot มือถือ: เติมย่อบางส่วนถูกบีบแต่ข้อมูลสำคัญแสดงได้ครบ</td>
             <td>เปิดเบราว์เซอร์ทั้งสองขนาด บันทึก screenshot</td>
             <td>✅ PASS</td>
           </tr>
