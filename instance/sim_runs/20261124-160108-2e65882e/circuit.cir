@@ -1,0 +1,16 @@
+* ENG29 2121 Lab 04 - CE voltage divider reference
+.options noacct
+VCC vcc 0 12
+VIN vin 0 DC 0 AC 1 SIN(0 0.01 1000)
+R1 vcc base 100000
+R2 base 0 22000
+RC vcc coll 2200
+RE emit 0 1000
+Q1 coll base emit QEDU
+CIN vin base 1e-05
+COUT coll out 1e-05
+RL out 0 10000
+.model QEDU NPN(IS=1e-14 BF=100 VAF=100 RB=10 RC=1 CJE=10p CJC=5p TF=0.3n TR=10n)
+.ac dec 20 1 1meg
+.print ac vm(out) vp(out) vm(vin) vp(vin)
+.end

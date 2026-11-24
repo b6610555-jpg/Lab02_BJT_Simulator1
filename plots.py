@@ -364,3 +364,57 @@ def tran_svg(tran: dict, width: int = 720, height: int = 360) -> str:
     )
     elements.append("</svg>")
     return "".join(elements)
+
+
+def bode_placeholder_svg(width: int = 720, height: int = 440) -> str:
+    """Illustrative Bode placeholder for before any simulation runs."""
+    muted = "#7a92a8"
+    grid = "#dce7ee"
+    left, top, bottom = 58.0, 30.0, 20.0
+    plot_w = width - left - 16.0
+    top_a = top
+    plot_h = (height - top_a - bottom) / 2.0 - 10.0
+    top_b = top_a + plot_h + 10.0
+    return (
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" '
+        f'height="{height}" viewBox="0 0 {width} {height}" role="img" '
+        f'aria-label="Bode placeholder">'
+        # Outer outline of the chart area
+        f'<rect x="{left}" y="{top_a}" width="{plot_w}" height="{plot_h}" '
+        f'fill="#f9fcfd" stroke="{grid}" stroke-width="1"/>'
+        f'<rect x="{left}" y="{top_b}" width="{plot_w}" height="{plot_h}" '
+        f'fill="#f9fcfd" stroke="{grid}" stroke-width="1"/>'
+        # Guide line inside the first panel
+        f'<line x1="{left + plot_w * 0.08}" y1="{top_a + 10}" '
+        f'x2="{left + plot_w * 0.08}" y2="{top_a + plot_h - 10}" '
+        f'stroke="{muted}" stroke-width="1" stroke-dasharray="6 4"/>'
+        # An illustrative diagonal curve in the first panel
+        f'<path d="M{left + plot_w * 0.15} {top_a + plot_h * 0.8} '
+        f'L{left + plot_w * 0.3} {top_a + plot_h * 0.5} '
+        f'L{left + plot_w * 0.55} {top_a + plot_h * 0.75} '
+        f'L{left + plot_w * 0.8} {top_a + plot_h * 0.35}" '
+        f'fill="none" stroke="{muted}" stroke-width="2" opacity="0.6"/>'
+        f'<text x="{left + plot_w / 2:.1f}" y="{top_a + plot_h / 2 + 4:.1f}" '
+        f'text-anchor="middle" font-family="{FONT}" font-size="13" '
+        f'fill="{muted}" text-anchor="middle">Bode response (illustrative)</text>'
+        f'<text x="{left + plot_w / 2:.1f}" y="{top_b + plot_h / 2 + 6:.1f}" '
+        f'text-anchor="middle" font-family="{FONT}" font-size="13" '
+        f'fill="{muted}">Input / Output waveforms (illustrative)</text>'
+        f'<text x="{left + plot_w / 2:.1f}" y="{top_b + plot_h - 6:.1f}" '
+        f'text-anchor="middle" font-family="{FONT}" font-size="10" '
+        f'fill="{muted}">Time (ms)</text>'
+        f'<text x="{left + plot_w - 100:.1f}" y="{top_a + 16:.1f}" '
+        f'font-family="{FONT}" font-size="12" fill="{muted}">Gain (dB)</text>'
+        f'<text x="{left + plot_w - 100:.1f}" y="{top_b + plot_h - 8:.1f}" '
+        f'font-family="{FONT}" font-size="12" fill="{muted}">Phase (°)</text>'
+        f'<text x="{left + plot_w - 100:.1f}" y="{top_b + plot_h - 8:.1f}" '
+        f'font-family="{FONT}" font-size="12" fill="{muted}">Voltage (mV)</text>'
+        f'<text x="{left + plot_w - 100:.1f}" y="{top_b + plot_h + 32:.1f}" '
+        f'font-family="{FONT}" font-size="12" fill="{muted}">Vin (teal) / Vout (orange)</text>'
+        "</svg>"
+    )
+
+
+def tran_placeholder_svg(width: int = 720, height: int = 360) -> str:
+    """Illustrative transient placeholder for before any simulation runs."""
+    return bode_placeholder_svg(width, height)
