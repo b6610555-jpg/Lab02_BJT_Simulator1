@@ -12,6 +12,10 @@ import math
 import os
 import re
 import shutil
+import subprocess
+import time
+import uuid
+from datetime import datetime
 from pathlib import Path
 
 DEFAULT_MODEL_NAME = "QEDU"
@@ -517,4 +521,214 @@ def ac_metrics(data: dict, frequency_hz: float) -> dict:
             "min": freqs[0] if freqs else None,
             "max": freqs[-1] if freqs else None,
         },
+    }
+
+
+_TRAN_HEADER = re.compile(r"^\s*Index\s+time\s+(.+?)\s*$")
+_TRAN_ROW = re.compile(
+    r"^\s*(\d+)\s+([-+0-9.eE]+)((?:\s+[-+0-9.eE]+)*)\s*$"
+)
+
+
+def parse_tran(log: str) -> dict:
+    """Parse a real ngspice ``.tran`` log into time-domain arrays."""
+    if not log or not log.strip():
+        raise ParseError("ngspice .tran output ว่าง ไม่มีข้อมูลให้ parse")
+
+    records: dict[int, dict] = {}
+    columns = None
+    for line in log.splitlines():
+        header = _TRAN_HEADER.match(line)
+        if header:
+            columns = header.group(1).split()
+            continue
+        if columns is None:
+            continue
+        row = _TRAN_ROW.match(line)
+        if row:
+            index = int(row.group(1))
+            values = [float(value) for value in row.group(3).split()]
+            record = records.setdefault(index, {"time": float(row.group(2))})
+            for name, value in zip(columns, values):
+                record[name] = value
+        elif not line.strip():
+            columns = None
+
+    if not records:
+        raise ParseError("ไม่พบ transient table ใน ngspice .tran output")
+
+    time_s = []
+    vin_v = []
+    vout_v = []
+    for index in sorted(records):
+        record = records[index]
+        missing = [
+            key for key in ("time", "v(vin)", "v(out)") if key not in record
+        ]
+        if missing:
+            raise ParseError(
+                f"tran row {index} ไม่ครบ: ขาด {', '.join(missing)}"
+            )
+        time_s.append(record["time"])
+        vin_v.append(record["v(vin)"])
+        vout_v.append(record["v(out)"])
+
+    return {
+        "time_s": time_s,
+        "vin_v": vin_v,
+        "vout_v": vout_v,
+        "source": "ngspice .tran",
+    }
+
+
+def tran_metrics(data: dict) -> dict:
+    """Summarize parsed transient data using only the real arrays."""
+    time_s = data.get("time_s") or []
+    vin_v = data.get("vin_v") or []
+    vout_v = data.get("vout_v") or []
+    if not time_s or len(vin_v) != len(time_s) or len(vout_v) != len(time_s):
+        raise ParseError("transient data ไม่ครบสำหรับคำนวณ metrics")
+
+    vin_peak = max(abs(value) for value in vin_v)
+    vout_peak = max(abs(value) for value in vout_v)
+    index = max(range(len(vin_v)), key=lambda i: abs(vin_v[i]))
+    phase_inverted = vin_v[index] * vout_v[index] < 0
+
+    return {
+        "vin_peak_v": vin_peak,
+        "vout_peak_v": vout_peak,
+        "vin_pp_v": max(vin_v) - min(vin_v),
+        "vout_pp_v": max(vout_v) - min(vout_v),
+        "gain_vv_peak": vout_peak / vin_peak if vin_peak else None,
+        "peak_index": index,
+        "phase_inverted": phase_inverted,
+        "samples": len(time_s),
+        "duration_s": time_s[-1] - time_s[0],
+    }
+
+
+def _log_excerpt(log_text: str, limit: int = 4000) -> str:
+    return (log_text or "")[-limit:]
+
+
+def _engine_name(exe: Path, text: str) -> str:
+    match = re.search(r"ngspice-([0-9][0-9A-Za-z.]*)", text)
+    if not match:
+        match = re.search(r"ngspice-([0-9][0-9A-Za-z.]*)", str(exe))
+    return f"ngspice-{match.group(1)}" if match else "ngspice"
+
+
+def _run_ngspice(exe: Path, netlist: str, run_dir: Path, stem: str):
+    """Write one netlist, run ngspice batch, and return its outputs."""
+    netlist_path = run_dir / f"{stem}.cir"
+    log_path = run_dir / f"{stem}.log"
+    netlist_path.write_text(netlist, encoding="utf-8")
+
+    try:
+        completed = subprocess.run(
+            [str(exe), "-b", "-o", str(log_path), str(netlist_path)],
+            cwd=run_dir,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=SIM_TIMEOUT_S,
+            shell=False,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise SimulationError(
+            f"ngspice ใช้เวลาเกิน {SIM_TIMEOUT_S:.0f} วินาที (timeout) "
+            f"สำหรับ {netlist_path.name}"
+        ) from exc
+
+    log_text = ""
+    if log_path.exists():
+        log_text = log_path.read_text(encoding="utf-8", errors="replace")
+    excerpt = _log_excerpt(log_text)
+
+    if completed.returncode != 0:
+        raise SimulationError(
+            f"ngspice exit code {completed.returncode}\n{excerpt}"
+        )
+
+    combined = f"{log_text}\n{completed.stdout or ''}"
+    for marker in ("error", "fatal", "singular matrix", "timestep too small"):
+        if marker in combined.lower():
+            raise SimulationError(
+                f"ngspice รายงาน '{marker}' ใน output\n{excerpt}"
+            )
+
+    if not log_text.strip():
+        raise ParseError(f"ngspice ไม่ได้สร้าง log output ({log_path.name})")
+
+    return netlist_path, log_path, log_text, completed.stdout or ""
+
+
+def run_simulation(params: dict, analysis: str) -> dict:
+    """Validate inputs, run the real ngspice analysis, and parse its output.
+
+    Transient runs first execute and parse a ``.op`` netlist, then precharge
+    the coupling capacitors from those operating-point voltages before the
+    ``.tran ... UIC`` run.  No result is returned unless ngspice ran cleanly
+    and its output parsed.
+    """
+    normalized = validate_simulation_input(params, analysis)
+    exe = find_ngspice()
+    started = time.perf_counter()
+
+    run_id = datetime.now().strftime("%Y%m%d-%H%M%S-") + uuid.uuid4().hex[:8]
+    run_dir = (
+        Path(__file__).resolve().parent / "instance" / "sim_runs" / run_id
+    )
+    run_dir.mkdir(parents=True, exist_ok=True)
+
+    warnings = list(normalized["warnings"])
+    stdout_parts: list[str] = []
+    op_data = None
+
+    if analysis == "tran":
+        op_netlist = build_netlist(normalized, "dc")
+        _, _, op_log, op_stdout = _run_ngspice(
+            exe, op_netlist, run_dir, "op"
+        )
+        stdout_parts.append(op_stdout)
+        op_data = parse_op(op_log)
+        warnings.extend(op_data.get("warnings", []))
+
+    netlist = build_netlist(normalized, analysis, op_result=op_data)
+    _, log_path, log_text, stdout = _run_ngspice(
+        exe, netlist, run_dir, "circuit"
+    )
+    stdout_parts.append(stdout)
+
+    if analysis == "dc":
+        data = parse_op(log_text)
+        metrics = None
+        warnings.extend(data.get("warnings", []))
+    elif analysis == "ac":
+        data = parse_ac(log_text)
+        metrics = ac_metrics(data, normalized["frequency_hz"])
+    else:
+        data = parse_tran(log_text)
+        metrics = tran_metrics(data)
+
+    elapsed_ms = round((time.perf_counter() - started) * 1000.0, 1)
+    engine = _engine_name(exe, "\n".join([log_text, *stdout_parts, str(exe)]))
+
+    return {
+        "analysis": analysis,
+        "engine": engine,
+        "model": DEFAULT_MODEL_NAME,
+        "model_card": BJT_MODEL_CARD,
+        "run_id": run_id,
+        "run_dir": str(run_dir),
+        "netlist": netlist,
+        "log_excerpt": _log_excerpt(log_text),
+        "log_path": str(log_path),
+        "elapsed_ms": elapsed_ms,
+        "warnings": warnings,
+        "params": normalized,
+        "data": data,
+        "metrics": metrics,
+        "op": op_data,
     }

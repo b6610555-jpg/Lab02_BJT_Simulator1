@@ -131,3 +131,51 @@ def test_interpolate_at_uses_log_frequency():
     assert se.interpolate_at(
         data["frequency_hz"], data["gain_db"], 1000
     ) == pytest.approx(4.858954, abs=1e-4)
+
+
+def test_parse_tran_fixture():
+    data = se.parse_tran((FIXTURES / "tran_baseline.log").read_text())
+    assert len(data["time_s"]) == 5011
+    assert data["time_s"][0] == pytest.approx(1e-8)
+    assert data["time_s"][-1] == pytest.approx(5e-3)
+    assert min(data["vin_v"]) == pytest.approx(-0.01, abs=1e-6)
+    assert max(data["vout_v"]) == pytest.approx(0.0175129, abs=1e-6)
+
+
+def test_tran_metrics_detects_inversion():
+    data = se.parse_tran((FIXTURES / "tran_baseline.log").read_text())
+    m = se.tran_metrics(data)
+    assert m["vin_peak_v"] == pytest.approx(0.01, rel=1e-4)
+    assert m["vout_peak_v"] == pytest.approx(0.0175, rel=1e-3)
+    assert m["phase_inverted"] is True
+
+
+def test_run_simulation_raises_when_ngspice_missing(monkeypatch):
+    def boom():
+        raise se.NgspiceNotFound("ngspice not found")
+
+    monkeypatch.setattr(se, "find_ngspice", boom)
+    with pytest.raises(se.NgspiceNotFound):
+        se.run_simulation(BASE, "dc")
+
+
+@pytest.mark.skipif(not se.ngspice_available(), reason="ngspice not installed")
+def test_real_dc_run():
+    result = se.run_simulation(BASE, "dc")
+    assert result["data"]["ic"] == pytest.approx(1.278e-3, rel=0.05)
+
+
+@pytest.mark.skipif(not se.ngspice_available(), reason="ngspice not installed")
+def test_real_ac_run():
+    result = se.run_simulation(BASE, "ac")
+    assert len(result["data"]["frequency_hz"]) == 121
+    assert result["metrics"]["gain_db_at_frequency"] == pytest.approx(
+        4.86, abs=0.1
+    )
+
+
+@pytest.mark.skipif(not se.ngspice_available(), reason="ngspice not installed")
+def test_real_tran_run():
+    result = se.run_simulation(BASE, "tran")
+    assert len(result["data"]["time_s"]) > 100
+    assert result["metrics"]["phase_inverted"] is True
