@@ -169,6 +169,56 @@ nav a:focus-visible {
 
 .badge:hover { box-shadow: 0 2px 8px rgba(0, 0, 0, .12); }
 
+/* ---- Clearer input groups (design doc) ---- */
+.sim-form-section {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px;
+  margin-bottom: 10px;
+}
+
+.sim-form-section .section-title {
+  font-size: .8rem;
+  color: var(--navy);
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+/* ---- Visible error states (design doc) ---- */
+.sim-error {
+  padding: 10px 14px;
+  border-radius: 7px;
+  margin: 10px 0;
+  font-size: .85rem;
+}
+
+.sim-error.engine-error {
+  background: #fff4ea;
+  border: 1px solid #f0d3a8;
+  color: #714321;
+}
+
+.sim-error.validation-error {
+  background: #fdecea;
+  border: 1px solid #f3c4c0;
+  color: #a3121f;
+}
+
+/* ---- Legend for charts (design doc) ---- */
+.chart-legend {
+  display: flex;
+  gap: 16px;
+  padding-top: 6px;
+  font-size: .7rem;
+  color: var(--muted);
+}
+
+.chart-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
 /* ---------------- Grid ---------------- */
 .lab-grid {
   display: grid;
@@ -679,6 +729,7 @@ button:hover { background: var(--teal-dk); }
   .sim-form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .sim-result-grid { grid-template-columns: 1fr; }
   .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  nav { padding: 8px 0; gap: 4px; }
 }
 
 @media (max-width: 560px) {
@@ -688,4 +739,6 @@ button:hover { background: var(--teal-dk); }
   .sim-analysis-field { min-width: 0; }
   .sim-actions button { width: 100%; }
   .chart svg { min-width: 520px; }
+  .sim-form-section { padding: 10px; }
+  .chart-legend { flex-direction: column; align-items: flex-start; gap: 6px; }
 }
