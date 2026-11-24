@@ -691,6 +691,7 @@ button:hover { background: var(--teal-dk); }
   border-radius: 0 5px 5px 0;
   font-size: .76rem;
   color: var(--muted);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 .data-details {
